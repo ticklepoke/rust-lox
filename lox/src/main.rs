@@ -1,7 +1,4 @@
-#![allow(dead_code)]
 mod lox;
-mod scanner;
-mod token;
 
 use std::{env, path};
 

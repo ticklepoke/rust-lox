@@ -49,7 +49,6 @@ impl ScannerError {
 
 pub struct Scanner<'a> {
     source: iter::Peekable<str::Chars<'a>>,
-    start: usize,
     line: usize,
     keywords: HashMap<&'static str, TokenType>,
 }
@@ -78,7 +77,6 @@ impl<'a> Scanner<'a> {
         Scanner {
             source: source.chars().peekable(),
             line: 1,
-            start: 0,
             keywords,
         }
     }

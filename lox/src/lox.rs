@@ -1,8 +1,10 @@
+extern crate lexer;
+
 use std::io::prelude::*;
 use std::{fs, io, path, process};
 
-use crate::scanner::Scanner;
-use crate::token::Token;
+use lexer::scanner::Scanner;
+use lexer::token::Token;
 
 pub struct Lox {
     error: Option<String>,

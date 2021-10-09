@@ -1,6 +1,8 @@
 use std::io::prelude::*;
 use std::{fs, io, path, process};
 
+use crate::token::TokenType;
+
 pub struct Lox {
     error: Option<String>,
 }
@@ -39,7 +41,7 @@ impl Lox {
 
     fn run(&self, source: String) {
         let scanner = Scanner::new(); // TODO
-        let tokens: Vec<Token> = Vec::new(); //TODO
+        let tokens: Vec<TokenType> = Vec::new(); //TODO
         match scanner.scan_tokens() {
             Ok(ts) => tokens = ts,
             Err(err) => self.report(err.line(), format!("{}", err)),

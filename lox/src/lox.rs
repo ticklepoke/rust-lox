@@ -1,7 +1,8 @@
 use std::io::prelude::*;
 use std::{fs, io, path, process};
 
-use crate::token::TokenType;
+use crate::scanner::Scanner;
+use crate::token::Token;
 
 pub struct Lox {
     error: Option<String>,
@@ -12,7 +13,7 @@ impl Lox {
         Lox { error: None }
     }
 
-    pub fn run_file(&self, path: path::PathBuf) {
+    pub fn run_file(&mut self, path: path::PathBuf) {
         let source = fs::read_to_string(path).expect("Unable to read file");
         self.run(source);
 
@@ -39,9 +40,9 @@ impl Lox {
         self.error = Some(message);
     }
 
-    fn run(&self, source: String) {
-        let scanner = Scanner::new(); // TODO
-        let tokens: Vec<TokenType> = Vec::new(); //TODO
+    fn run(&mut self, source: String) {
+        let scanner = Scanner::new(source);
+        let mut tokens: Vec<Token> = Vec::new();
         match scanner.scan_tokens() {
             Ok(ts) => tokens = ts,
             Err(err) => self.report(err.line(), format!("{}", err)),

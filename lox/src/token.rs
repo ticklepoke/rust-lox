@@ -56,6 +56,7 @@ pub enum Literal {
     Float(f64),
 }
 
+#[derive(Debug)]
 pub struct Token {
     pub token_type: TokenType,
     lexeme: String,

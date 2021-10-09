@@ -41,7 +41,7 @@ impl Lox {
     }
 
     fn run(&mut self, source: String) {
-        let scanner = Scanner::new(source);
+        let mut scanner = Scanner::new(source.as_str());
         let mut tokens: Vec<Token> = Vec::new();
         match scanner.scan_tokens() {
             Ok(ts) => tokens = ts,

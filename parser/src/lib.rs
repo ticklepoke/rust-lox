@@ -2,4 +2,5 @@
 extern crate lexer;
 
 mod ast;
+mod error;
 mod parser;

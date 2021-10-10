@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     // Single character tokens
@@ -56,10 +58,19 @@ pub enum Literal {
     Float(f64),
 }
 
+impl Display for Literal {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Str(str) => write!(f, "{}", str),
+            Self::Float(fl) => write!(f, "{}", fl),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct Token {
     pub token_type: TokenType,
-    lexeme: Option<String>,
+    pub lexeme: Option<String>,
     literal: Option<Literal>,
     line: usize,
 }

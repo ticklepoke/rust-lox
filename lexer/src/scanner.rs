@@ -85,19 +85,16 @@ impl<'a> Scanner<'a> {
         let mut tokens: Vec<Token> = Vec::new();
         loop {
             self.skip_whitespace();
-            match self.source.next() {
-                Some(c) => {
-                    if !self.skip_comments(c) {
-                        match self.scan_token(c) {
-                            Ok(token) => tokens.push(token),
-                            Err(err) => return Err(err),
-                        }
+            if let Some(c) = self.source.next() {
+                if !self.skip_comments(c) {
+                    match self.scan_token(c) {
+                        Ok(token) => tokens.push(token),
+                        Err(err) => return Err(err),
                     }
                 }
-                None => {
-                    tokens.push(self.make_token(TokenType::EOF));
-                    break;
-                }
+            } else {
+                tokens.push(self.make_token(TokenType::EOF));
+                break;
             }
         }
 

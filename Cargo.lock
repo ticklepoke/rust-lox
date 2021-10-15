@@ -3,13 +3,26 @@
 version = 3
 
 [[package]]
+name = "interpreter"
+version = "0.1.0"
+dependencies = [
+ "lexer",
+ "parser",
+ "utils",
+]
+
+[[package]]
 name = "lexer"
 version = "0.1.0"
+dependencies = [
+ "utils",
+]
 
 [[package]]
 name = "lox"
 version = "0.1.0"
 dependencies = [
+ "interpreter",
  "lexer",
  "parser",
 ]
@@ -19,4 +32,9 @@ name = "parser"
 version = "0.1.0"
 dependencies = [
  "lexer",
+ "utils",
 ]
+
+[[package]]
+name = "utils"
+version = "0.1.0"

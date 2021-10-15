@@ -9,3 +9,4 @@ authors = ["ticklepoke <lee.nigel@hotmail.com>"]
 [dependencies]
 lexer = { path = "../lexer" }
 parser = { path = "../parser" }
+interpreter = { path = "../interpreter" }

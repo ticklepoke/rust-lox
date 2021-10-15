@@ -1,51 +1,15 @@
 use std::collections::HashMap;
-use std::{fmt, iter, str};
+use std::{iter, str};
+use utils::errors::ScannerError;
 
-use crate::token::{Literal, Token, TokenType};
+use crate::literal::Literal;
+use crate::token::{Token, TokenType};
 
 /*
  * TODO: Block style comments
  */
 
 type ScannerResult<T> = Result<T, ScannerError>;
-
-#[derive(Debug)]
-pub enum ScannerError {
-    UnknownCharacter(char, usize),
-    UntermiantedString(usize),
-    InvalidCharacter(char, usize),
-    InvalidTerm(String, usize),
-}
-
-impl fmt::Display for ScannerError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match &*self {
-            ScannerError::UnknownCharacter(c, line_number) => {
-                write!(f, "Unrecognised character {} at line {}", c, line_number)
-            }
-            ScannerError::UntermiantedString(line_number) => {
-                write!(f, "Unterminated string at line {}", line_number)
-            }
-            ScannerError::InvalidCharacter(c, line_number) => {
-                write!(f, "Invalid character {} at line {}", c, line_number)
-            }
-            ScannerError::InvalidTerm(s, line_number) => {
-                write!(f, "Invalid term {} at line {}", s.clone(), line_number)
-            }
-        }
-    }
-}
-
-impl ScannerError {
-    pub fn line(&self) -> usize {
-        match *self {
-            ScannerError::UnknownCharacter(_, line_number) => line_number,
-            ScannerError::UntermiantedString(line_number) => line_number,
-            ScannerError::InvalidCharacter(_, line_number) => line_number,
-            ScannerError::InvalidTerm(_, line_number) => line_number,
-        }
-    }
-}
 
 pub struct Scanner<'a> {
     source: iter::Peekable<str::Chars<'a>>,
@@ -186,7 +150,7 @@ impl<'a> Scanner<'a> {
                 return Ok(Token::new(
                     TokenType::String,
                     Some(captured_string.clone()),
-                    Some(Literal::Str(captured_string)),
+                    Some(Literal::String(captured_string)),
                     self.line,
                 ));
             } else if c == '\n' {
@@ -221,7 +185,7 @@ impl<'a> Scanner<'a> {
             Ok(Token::new(
                 TokenType::Number,
                 Some(captured_number),
-                Some(Literal::Float(parsed_number)),
+                Some(Literal::Number(parsed_number)),
                 self.line,
             ))
         } else {

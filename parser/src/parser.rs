@@ -1,6 +1,9 @@
 use crate::ast::Expr;
-use crate::error::{ParserError, ParserResult};
-use lexer::token::{Literal, Token, TokenType};
+use lexer::literal::Literal;
+use lexer::token::{Token, TokenType};
+use utils::errors::ParserError;
+
+pub type ParserResult = Result<Expr, ParserError>;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -81,23 +84,23 @@ impl Parser {
     fn primary(&mut self) -> ParserResult {
         use TokenType::*;
         if self.match_token(vec![False]) {
-            return Ok(Expr::Literal(Literal::Bool(false)));
+            return Ok(Expr::Literal(Literal::Boolean(false)));
         }
         if self.match_token(vec![True]) {
-            return Ok(Expr::Literal(Literal::Bool(true)));
+            return Ok(Expr::Literal(Literal::Boolean(true)));
         }
         if self.match_token(vec![Nil]) {
             return Ok(Expr::Literal(Literal::Nil));
         }
         if self.match_token(vec![Number]) {
-            if let Literal::Float(f) = self.previous().literal.as_ref().unwrap() {
-                return Ok(Expr::Literal(Literal::Float(*f)));
+            if let Literal::Number(f) = self.previous().literal.as_ref().unwrap() {
+                return Ok(Expr::Literal(Literal::Number(*f)));
             }
             // TODO dont unwrap early?
         }
         if self.match_token(vec![String]) {
-            if let Literal::Str(s) = self.previous().literal.as_ref().unwrap() {
-                return Ok(Expr::Literal(Literal::Str(s.to_string())));
+            if let Literal::String(s) = self.previous().literal.as_ref().unwrap() {
+                return Ok(Expr::Literal(Literal::String(s.to_string())));
             }
         }
         if self.match_token(vec![LeftParen]) {

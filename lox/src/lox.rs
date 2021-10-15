@@ -1,9 +1,11 @@
+extern crate interpreter;
 extern crate lexer;
 extern crate parser;
 
 use std::io::prelude::*;
 use std::{fs, io, path, process};
 
+use interpreter::interpreter::Interpreter;
 use lexer::scanner::Scanner;
 use lexer::token::Token;
 use parser::parser::Parser;
@@ -45,15 +47,22 @@ impl Lox {
     }
 
     fn run(&mut self, source: String) {
+        // Lexer
         let mut scanner = Scanner::new(source.as_str());
         let mut tokens: Vec<Token> = Vec::new();
         match scanner.scan_tokens() {
             Ok(ts) => tokens = ts,
             Err(err) => self.report(err.line(), format!("{}", err)),
         }
+
+        // Parser
         let mut parser = Parser::new(tokens);
-        if let Ok(parser_result) = parser.parse() {
-            println!("{}", parser_result);
+        let ast = parser.parse().expect("Parser Error");
+
+        // Interpreter
+        let interpreter = Interpreter::default();
+        if let Ok(eval_result) = interpreter.evaluate(ast) {
+            println!("{}", eval_result);
         }
     }
 }

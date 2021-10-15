@@ -1,3 +1,4 @@
+use crate::literal::Literal;
 use std::fmt::Display;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -50,25 +51,6 @@ pub enum TokenType {
 
     // Misc
     EOF,
-}
-
-#[derive(Debug, PartialEq, Clone)]
-pub enum Literal {
-    Str(String),
-    Float(f64),
-    Bool(bool),
-    Nil,
-}
-
-impl Display for Literal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Str(str) => write!(f, "{}", str),
-            Self::Float(fl) => write!(f, "{}", fl),
-            Self::Bool(b) => write!(f, "{}", b),
-            Self::Nil => write!(f, "Nil"),
-        }
-    }
 }
 
 #[derive(Debug, PartialEq, Clone)]

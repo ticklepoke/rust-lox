@@ -1,4 +1,5 @@
-use lexer::token::{Literal, Token};
+use lexer::literal::Literal;
+use lexer::token::Token;
 use std::fmt;
 
 #[derive(Debug)]

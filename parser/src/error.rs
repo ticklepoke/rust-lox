@@ -1,4 +1,8 @@
-pub type ParserResult<T> = Result<T, ParserError>;
+use crate::ast::Expr;
+
+pub type ParserResult = Result<Expr, ParserError>;
 
 #[derive(Debug)]
-pub enum ParserError {}
+pub enum ParserError {
+    UnexpectedToken(String, usize),
+}

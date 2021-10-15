@@ -56,6 +56,8 @@ pub enum TokenType {
 pub enum Literal {
     Str(String),
     Float(f64),
+    Bool(bool),
+    Nil,
 }
 
 impl Display for Literal {
@@ -63,6 +65,8 @@ impl Display for Literal {
         match self {
             Self::Str(str) => write!(f, "{}", str),
             Self::Float(fl) => write!(f, "{}", fl),
+            Self::Bool(b) => write!(f, "{}", b),
+            Self::Nil => write!(f, "Nil"),
         }
     }
 }
@@ -71,8 +75,8 @@ impl Display for Literal {
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: Option<String>,
-    literal: Option<Literal>,
-    line: usize,
+    pub literal: Option<Literal>,
+    pub line: usize,
 }
 
 impl Token {

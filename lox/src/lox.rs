@@ -1,10 +1,12 @@
 extern crate lexer;
+extern crate parser;
 
 use std::io::prelude::*;
 use std::{fs, io, path, process};
 
 use lexer::scanner::Scanner;
 use lexer::token::Token;
+use parser::parser::Parser;
 
 pub struct Lox {
     error: Option<String>,
@@ -49,7 +51,9 @@ impl Lox {
             Ok(ts) => tokens = ts,
             Err(err) => self.report(err.line(), format!("{}", err)),
         }
-
-        println!("{:?}", tokens);
+        let mut parser = Parser::new(tokens);
+        if let Ok(parser_result) = parser.parse() {
+            println!("{}", parser_result);
+        }
     }
 }

@@ -12,8 +12,8 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) {
-        self.expression().unwrap();
+    pub fn parse(&mut self) -> ParserResult {
+        self.expression()
     }
 
     // AST NODE Fns
@@ -166,11 +166,11 @@ impl Parser {
         while !self.is_end() {
             use TokenType::*;
             if self.previous().token_type == SemiColon {
-                return ();
+                return;
             }
 
             match self.peek().token_type {
-                Class | For | Fun | If | Print | Return | Var | While => return (),
+                Class | For | Fun | If | Print | Return | Var | While => return,
                 _ => (),
             };
 

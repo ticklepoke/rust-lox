@@ -1,9 +1,9 @@
-use crate::ast::Expr;
+use crate::ast::{Expr, Stmt};
 use lexer::literal::Literal;
 use lexer::token::{Token, TokenType};
 use utils::errors::ParserError;
 
-pub type ParserResult = Result<Expr, ParserError>;
+pub type ParserResult<T> = Result<T, ParserError>;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -15,16 +15,45 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> ParserResult {
-        self.expression()
+    pub fn parse(&mut self) -> ParserResult<Vec<Stmt>> {
+        let mut statements = Vec::new();
+        while !self.is_end() {
+            statements.push(self.statement()?);
+        }
+        Ok(statements)
     }
 
     // AST NODE Fns
-    fn expression(&mut self) -> ParserResult {
+    fn statement(&mut self) -> ParserResult<Stmt> {
+        if self.match_token(vec![TokenType::Print]) {
+            return self.print_statement();
+        }
+        self.expression_statement()
+    }
+
+    fn print_statement(&mut self) -> ParserResult<Stmt> {
+        let val = self.expression()?;
+        self.consume(
+            TokenType::SemiColon,
+            "Expected ';' after print statement".to_string(),
+        )?;
+        Ok(Stmt::Print(val))
+    }
+
+    fn expression_statement(&mut self) -> ParserResult<Stmt> {
+        let val = self.expression()?;
+        self.consume(
+            TokenType::SemiColon,
+            "Expected ';' after print statement".to_string(),
+        )?;
+        Ok(Stmt::Expr(val))
+    }
+
+    fn expression(&mut self) -> ParserResult<Expr> {
         self.equality()
     }
 
-    fn equality(&mut self) -> ParserResult {
+    fn equality(&mut self) -> ParserResult<Expr> {
         let mut expr = self.comparison()?;
         use TokenType::*;
         while self.match_token(vec![BangEqual, EqualEqual]) {
@@ -35,7 +64,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn comparison(&mut self) -> ParserResult {
+    fn comparison(&mut self) -> ParserResult<Expr> {
         let mut expr = self.term()?;
 
         use TokenType::*;
@@ -47,7 +76,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn term(&mut self) -> ParserResult {
+    fn term(&mut self) -> ParserResult<Expr> {
         let mut expr = self.factor()?;
 
         use TokenType::*;
@@ -59,7 +88,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> ParserResult {
+    fn factor(&mut self) -> ParserResult<Expr> {
         let mut expr = self.unary()?;
 
         use TokenType::*;
@@ -71,7 +100,7 @@ impl Parser {
         Ok(expr)
     }
 
-    fn unary(&mut self) -> ParserResult {
+    fn unary(&mut self) -> ParserResult<Expr> {
         use TokenType::*;
         if self.match_token(vec![Bang, Minus]) {
             let operator = self.previous().clone();
@@ -81,7 +110,7 @@ impl Parser {
         self.primary()
     }
 
-    fn primary(&mut self) -> ParserResult {
+    fn primary(&mut self) -> ParserResult<Expr> {
         use TokenType::*;
         if self.match_token(vec![False]) {
             return Ok(Expr::Literal(Literal::Boolean(false)));

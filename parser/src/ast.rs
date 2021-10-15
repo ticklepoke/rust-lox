@@ -3,6 +3,20 @@ use lexer::token::Token;
 use std::fmt;
 
 #[derive(Debug)]
+pub enum Stmt {
+    Expr(Expr),
+    Print(Expr),
+}
+
+impl fmt::Display for Stmt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            Stmt::Expr(ref e) | Stmt::Print(ref e) => write!(f, "{}", e),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Grouping(Box<Expr>),

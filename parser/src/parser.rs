@@ -12,6 +12,10 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
+    pub fn parse(&mut self) {
+        self.expression().unwrap();
+    }
+
     // AST NODE Fns
     fn expression(&mut self) -> ParserResult {
         self.equality()
@@ -108,8 +112,8 @@ impl Parser {
     }
 
     // MISC UTILS FNs
-    fn match_token(&mut self, tokens: Vec<TokenType>) -> bool {
-        for t in tokens {
+    fn match_token(&mut self, token_types: Vec<TokenType>) -> bool {
+        for t in token_types {
             if self.check(t) {
                 self.advance();
                 return true;
@@ -118,11 +122,11 @@ impl Parser {
         false
     }
 
-    fn check(&self, token: TokenType) -> bool {
+    fn check(&self, token_type: TokenType) -> bool {
         if self.is_end() {
             return false;
         }
-        self.peek().token_type == token
+        self.peek().token_type == token_type
     }
 
     fn advance(&mut self) -> &Token {
@@ -146,5 +150,31 @@ impl Parser {
         self.tokens
             .get(self.current - 1)
             .expect("Token index out of bounds")
+    }
+
+    // Error Utils
+    fn consume(&mut self, token_type: TokenType, msg: String) -> Result<Token, ParserError> {
+        if self.check(token_type) {
+            Ok(self.advance().clone())
+        } else {
+            Err(ParserError::GenericError(msg, self.peek().line))
+        }
+    }
+
+    fn synchronize(&mut self) {
+        self.advance();
+        while !self.is_end() {
+            use TokenType::*;
+            if self.previous().token_type == SemiColon {
+                return ();
+            }
+
+            match self.peek().token_type {
+                Class | For | Fun | If | Print | Return | Var | While => return (),
+                _ => (),
+            };
+
+            self.advance();
+        }
     }
 }

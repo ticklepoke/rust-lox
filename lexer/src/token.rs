@@ -52,7 +52,7 @@ pub enum TokenType {
     EOF,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Literal {
     Str(String),
     Float(f64),
@@ -71,12 +71,22 @@ impl Display for Literal {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: Option<String>,
     pub literal: Option<Literal>,
     pub line: usize,
+}
+
+impl Display for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(lexeme) = &self.lexeme {
+            write!(f, "{:?} {} {:?}", self.token_type, lexeme, self.literal)
+        } else {
+            write!(f, "{:?} '' {:?}", self.token_type, self.literal)
+        }
+    }
 }
 
 impl Token {
@@ -91,14 +101,6 @@ impl Token {
             lexeme,
             literal,
             line,
-        }
-    }
-
-    pub fn to_string(&self) -> String {
-        if let Some(lexeme) = &self.lexeme {
-            format!("{:?} {} {:?}", self.token_type, lexeme, self.literal)
-        } else {
-            format!("{:?} '' {:?}", self.token_type, self.literal)
         }
     }
 }

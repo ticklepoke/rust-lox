@@ -156,7 +156,7 @@ impl<'a> Scanner<'a> {
 
             '"' => self.scan_string(),
 
-            c @ _ => {
+            c => {
                 if c.is_digit(10) {
                     self.scan_number(c)
                 } else if c.is_alphabetic() || c == '_' {
@@ -204,7 +204,7 @@ impl<'a> Scanner<'a> {
 
         while let Some(&c) = self.source.peek() {
             if c == '.' {
-                if captured_number.contains(".") {
+                if captured_number.contains('.') {
                     return Err(ScannerError::InvalidCharacter('.', self.line));
                 } else {
                     captured_number.push(c)
@@ -218,12 +218,12 @@ impl<'a> Scanner<'a> {
         }
 
         if let Ok(parsed_number) = captured_number.parse::<f64>() {
-            return Ok(Token::new(
+            Ok(Token::new(
                 TokenType::Number,
                 Some(captured_number),
                 Some(Literal::Float(parsed_number)),
                 self.line,
-            ));
+            ))
         } else {
             Err(ScannerError::InvalidTerm(captured_number, self.line))
         }

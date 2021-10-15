@@ -21,7 +21,7 @@ impl Parser {
         let mut expr = self.comparison()?;
         use TokenType::*;
         while self.match_token(vec![BangEqual, EqualEqual]) {
-            let operator = self.previous();
+            let operator = self.previous().clone();
             let right = self.comparison()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
@@ -33,7 +33,7 @@ impl Parser {
 
         use TokenType::*;
         while self.match_token(vec![Greater, GreaterEqual, Less, LessEqual]) {
-            let operator = *self.previous();
+            let operator = self.previous().clone();
             let right = self.term()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right))
         }
@@ -45,7 +45,7 @@ impl Parser {
 
         use TokenType::*;
         while self.match_token(vec![Minus, Plus]) {
-            let operator = *self.previous();
+            let operator = self.previous().clone();
             let right = self.factor()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
@@ -57,7 +57,7 @@ impl Parser {
 
         use TokenType::*;
         while self.match_token(vec![Slash, Star]) {
-            let operator = *self.previous();
+            let operator = self.previous().clone();
             let right = self.unary()?;
             expr = Expr::Binary(Box::new(expr), operator, Box::new(right));
         }
@@ -67,7 +67,7 @@ impl Parser {
     fn unary(&mut self) -> ParserResult {
         use TokenType::*;
         if self.match_token(vec![Bang, Minus]) {
-            let operator = *self.previous();
+            let operator = self.previous().clone();
             let right = self.unary()?;
             return Ok(Expr::Unary(operator, Box::new(right)));
         }
@@ -88,7 +88,8 @@ impl Parser {
         if self.match_token(vec![Number]) {
             if let Literal::Float(f) = self.previous().literal.as_ref().unwrap() {
                 return Ok(Expr::Literal(Literal::Float(*f)));
-            } // TODO dont unwrap early?
+            }
+            // TODO dont unwrap early?
         }
         if self.match_token(vec![String]) {
             if let Literal::Str(s) = self.previous().literal.as_ref().unwrap() {

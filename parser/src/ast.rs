@@ -12,8 +12,8 @@ pub enum Expr {
 
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            &Expr::Binary(ref left, ref token, ref right) => {
+        match *self {
+            Expr::Binary(ref left, ref token, ref right) => {
                 write!(
                     f,
                     "({} {} {})",
@@ -22,13 +22,13 @@ impl fmt::Display for Expr {
                     right
                 )
             }
-            &Expr::Grouping(ref expr) => {
+            Expr::Grouping(ref expr) => {
                 write!(f, "(group {})", expr)
             }
-            &Expr::Literal(ref literal) => {
+            Expr::Literal(ref literal) => {
                 write!(f, "{}", literal)
             }
-            &Expr::Unary(ref token, ref expr) => {
+            Expr::Unary(ref token, ref expr) => {
                 write!(
                     f,
                     "({} {})",

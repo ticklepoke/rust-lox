@@ -1,6 +1,6 @@
 use lexer::literal::Literal;
 use lexer::token::Token;
-use parser::ast::Expr;
+use parser::ast::{Expr, Stmt};
 use std::convert::TryFrom;
 use utils::errors::InterpreterError;
 
@@ -15,13 +15,33 @@ impl Default for Interpreter {
 }
 
 impl Interpreter {
-    pub fn evaluate(&self, expr: Expr) -> InterpreterResult<Literal> {
+    pub fn interpret(&self, stmts: Vec<Stmt>) -> InterpreterResult<()> {
+        for stmt in stmts {
+            match stmt {
+                Stmt::Expr(e) => {
+                    self.evaluate(e)?;
+                }
+                Stmt::Print(e) => {
+                    self.print_statement(e)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn evaluate(&self, expr: Expr) -> InterpreterResult<Literal> {
         match expr {
             Expr::Literal(l) => Ok(l),
             Expr::Grouping(e) => self.evaluate(*e),
             Expr::Unary(operator, right) => self.unary_expr(operator, *right),
             Expr::Binary(left, operator, right) => self.binary_expr(*left, operator, *right),
         }
+    }
+
+    fn print_statement(&self, expr: Expr) -> InterpreterResult<()> {
+        let value = self.evaluate(expr)?;
+        println!("{}", value);
+        Ok(())
     }
 
     fn unary_expr(&self, operator: Token, right: Expr) -> InterpreterResult<Literal> {

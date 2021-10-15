@@ -61,8 +61,6 @@ impl Lox {
 
         // Interpreter
         let interpreter = Interpreter::default();
-        if let Ok(eval_result) = interpreter.evaluate(ast) {
-            println!("{}", eval_result);
-        }
+        interpreter.interpret(ast).expect("Interpreter Error");
     }
 }

@@ -1,3 +1,4 @@
+use crate::environment::Environment;
 use lexer::literal::Literal;
 use lexer::token::Token;
 use parser::ast::{Expr, Stmt};
@@ -6,16 +7,24 @@ use utils::errors::InterpreterError;
 
 pub type InterpreterResult<T> = Result<T, InterpreterError>;
 
-pub struct Interpreter {}
+pub struct Interpreter {
+    environment: Environment,
+}
 
 impl Default for Interpreter {
     fn default() -> Self {
-        Interpreter {}
+        Interpreter {
+            environment: Environment::new(),
+        }
     }
 }
 
 impl Interpreter {
-    pub fn interpret(&self, stmts: Vec<Stmt>) -> InterpreterResult<()> {
+    pub fn new(e: Environment) -> Self {
+        Interpreter { environment: e }
+    }
+
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> InterpreterResult<()> {
         for stmt in stmts {
             match stmt {
                 Stmt::Expr(e) => {
@@ -24,7 +33,7 @@ impl Interpreter {
                 Stmt::Print(e) => {
                     self.print_statement(e)?;
                 }
-                _ => (),
+                Stmt::Var(name, init) => self.var_statement(name, init)?,
             }
         }
         Ok(())
@@ -36,7 +45,7 @@ impl Interpreter {
             Expr::Grouping(e) => self.evaluate(*e),
             Expr::Unary(operator, right) => self.unary_expr(operator, *right),
             Expr::Binary(left, operator, right) => self.binary_expr(*left, operator, *right),
-            _ => Err(InterpreterError::InvalidAstType),
+            Expr::Variable(name) => self.var_expression(name),
         }
     }
 
@@ -44,6 +53,30 @@ impl Interpreter {
         let value = self.evaluate(expr)?;
         println!("{}", value);
         Ok(())
+    }
+
+    fn var_statement(&mut self, name: Token, init: Option<Expr>) -> InterpreterResult<()> {
+        let mut value = None;
+        if init.is_some() {
+            value = Some(self.evaluate(init.unwrap())?);
+        }
+
+        if let Some(name) = name.lexeme {
+            match value {
+                Some(v) => self.environment.define(name, v),
+                None => self.environment.define(name, Literal::Nil),
+            }
+        }
+        Ok(())
+    }
+
+    fn var_expression(&self, name: Token) -> InterpreterResult<Literal> {
+        let name = name.lexeme.expect("Expected lexeme for variable lookup");
+        let value = self.environment.get(name);
+        if let Some(value) = value {
+            return Ok(value);
+        }
+        Ok(Literal::Nil)
     }
 
     fn unary_expr(&self, operator: Token, right: Expr) -> InterpreterResult<Literal> {

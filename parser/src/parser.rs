@@ -18,8 +18,8 @@ impl Parser {
     pub fn parse(&mut self) -> ParserResult<Vec<Stmt>> {
         let mut statements = Vec::new();
         while !self.is_end() {
-            if let Ok(stmt) = self.statement() {
-                statements.push(stmt);
+            if let Ok(decl) = self.declaration() {
+                statements.push(decl);
             }
         }
         Ok(statements)

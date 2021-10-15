@@ -1,7 +1,3 @@
-extern crate interpreter;
-extern crate lexer;
-extern crate parser;
-
 use std::io::prelude::*;
 use std::{fs, io, path, process};
 
@@ -19,23 +15,23 @@ impl Lox {
         Lox { error: None }
     }
 
-    pub fn run_file(&mut self, path: path::PathBuf) {
+    pub fn run_file(&mut self, path: path::PathBuf, i: &mut Interpreter) {
         let source = fs::read_to_string(path).expect("Unable to read file");
-        self.run(source);
+        self.run(source, i);
 
         if self.error.is_some() {
             process::exit(1)
         }
     }
 
-    pub fn run_prompt(&mut self) {
+    pub fn run_prompt(&mut self, i: &mut Interpreter) {
         let mut input = String::new();
         let stdin = io::stdin();
         loop {
             print!("lox> ");
             io::stdout().flush().expect("[ICE] Unable to flush stdout");
             stdin.lock().read_line(&mut input).unwrap();
-            self.run(input.clone());
+            self.run(input.clone(), i);
             input.clear();
             self.error = None;
         }
@@ -46,7 +42,7 @@ impl Lox {
         self.error = Some(message);
     }
 
-    fn run(&mut self, source: String) {
+    fn run(&mut self, source: String, interpreter: &mut Interpreter) {
         // Lexer
         let mut scanner = Scanner::new(source.as_str());
         let mut tokens: Vec<Token> = Vec::new();
@@ -60,7 +56,6 @@ impl Lox {
         let ast = parser.parse().expect("Parser Error");
 
         // Interpreter
-        let interpreter = Interpreter::default();
         interpreter.interpret(ast).expect("Interpreter Error");
     }
 }

@@ -18,12 +18,43 @@ impl Parser {
     pub fn parse(&mut self) -> ParserResult<Vec<Stmt>> {
         let mut statements = Vec::new();
         while !self.is_end() {
-            statements.push(self.statement()?);
+            if let Ok(stmt) = self.statement() {
+                statements.push(stmt);
+            }
         }
         Ok(statements)
     }
 
     // AST NODE Fns
+    fn declaration(&mut self) -> ParserResult<Stmt> {
+        let res;
+        if self.match_token(vec![TokenType::Var]) {
+            res = self.var_declaration()
+        } else {
+            res = self.statement()
+        }
+
+        if res.is_err() {
+            self.synchronize();
+        }
+        res
+    }
+
+    fn var_declaration(&mut self) -> ParserResult<Stmt> {
+        let name = self.consume(TokenType::Identifier, "Expected variable name".to_string())?;
+
+        let mut init = None;
+        if self.match_token(vec![TokenType::Equal]) {
+            init = Some(self.expression()?);
+        }
+
+        self.consume(
+            TokenType::SemiColon,
+            "expected ';' after variable declaration".to_string(),
+        )?;
+        Ok(Stmt::Var(name, init))
+    }
+
     fn statement(&mut self) -> ParserResult<Stmt> {
         if self.match_token(vec![TokenType::Print]) {
             return self.print_statement();
@@ -131,6 +162,9 @@ impl Parser {
             if let Literal::String(s) = self.previous().literal.as_ref().unwrap() {
                 return Ok(Expr::Literal(Literal::String(s.to_string())));
             }
+        }
+        if self.match_token(vec![Identifier]) {
+            return Ok(Expr::Variable(self.previous().clone()));
         }
         if self.match_token(vec![LeftParen]) {
             let expr = self.expression()?;

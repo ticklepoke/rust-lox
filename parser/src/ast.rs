@@ -6,12 +6,17 @@ use std::fmt;
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
+    Var(Token, Option<Expr>),
 }
 
 impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
             Stmt::Expr(ref e) | Stmt::Print(ref e) => write!(f, "{}", e),
+            Stmt::Var(ref name, ref init) => match init {
+                Some(ref init) => write!(f, "({} {})", name, init),
+                None => write!(f, "({})", name),
+            },
         }
     }
 }
@@ -22,6 +27,7 @@ pub enum Expr {
     Grouping(Box<Expr>),
     Literal(Literal),
     Unary(Token, Box<Expr>),
+    Variable(Token),
 }
 
 impl fmt::Display for Expr {
@@ -43,6 +49,9 @@ impl fmt::Display for Expr {
                     token.lexeme.as_ref().unwrap_or(&String::new()),
                     expr
                 )
+            }
+            Expr::Variable(ref token) => {
+                write!(f, "{}", token)
             }
         }
     }

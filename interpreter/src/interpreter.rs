@@ -24,6 +24,7 @@ impl Interpreter {
                 Stmt::Print(e) => {
                     self.print_statement(e)?;
                 }
+                _ => (),
             }
         }
         Ok(())
@@ -35,6 +36,7 @@ impl Interpreter {
             Expr::Grouping(e) => self.evaluate(*e),
             Expr::Unary(operator, right) => self.unary_expr(operator, *right),
             Expr::Binary(left, operator, right) => self.binary_expr(*left, operator, *right),
+            _ => Err(InterpreterError::InvalidAstType),
         }
     }
 

@@ -28,6 +28,7 @@ pub enum Expr {
     Literal(Literal),
     Unary(Token, Box<Expr>),
     Variable(Token),
+    Assign(Token, Box<Expr>),
 }
 
 impl fmt::Display for Expr {
@@ -52,6 +53,9 @@ impl fmt::Display for Expr {
             }
             Expr::Variable(ref token) => {
                 write!(f, "{}", token)
+            }
+            Expr::Assign(ref name, ref init) => {
+                write!(f, "({} = {})", name, init)
             }
         }
     }

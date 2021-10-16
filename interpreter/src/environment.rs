@@ -1,5 +1,7 @@
+use crate::interpreter::InterpreterResult;
 use lexer::literal::Literal;
 use std::collections::HashMap;
+use utils::errors::InterpreterError;
 
 #[derive(Debug)]
 pub struct Environment {
@@ -23,5 +25,13 @@ impl Environment {
         } else {
             None
         }
+    }
+
+    pub fn assign(&mut self, name: String, value: Literal) -> InterpreterResult<()> {
+        if self.values.contains_key(&name) {
+            self.values.insert(name, value);
+            return Ok(());
+        }
+        Err(InterpreterError::UndefinedVariable(name))
     }
 }

@@ -18,12 +18,14 @@ pub enum ScannerError {
 pub enum InterpreterError {
     InvalidCoercion(String),
     InvalidAstType,
+    UndefinedVariable(String),
 }
 
 #[derive(Debug)]
 pub enum ParserError {
     UnexpectedToken(String, usize),
     GenericError(String, usize),
+    InvalidAssignmentTarget,
 }
 
 impl fmt::Display for ScannerError {

@@ -62,10 +62,24 @@ impl Parser {
         if self.match_token(vec![TokenType::Print]) {
             return self.print_statement();
         }
+        if self.match_token(vec![TokenType::While]) {
+            return self.while_statement();
+        }
         if self.match_token(vec![TokenType::LeftBrace]) {
             return Ok(Stmt::Block(self.block()?));
         }
         self.expression_statement()
+    }
+
+    fn while_statement(&mut self) -> ParserResult<Stmt> {
+        self.consume(TokenType::LeftParen, "Expect '(' after 'while'".to_string())?;
+        let condition = self.expression()?;
+        self.consume(
+            TokenType::RightParen,
+            "Expect ')' after condition".to_string(),
+        )?;
+        let body = self.statement()?;
+        Ok(Stmt::While(condition, Box::new(body)))
     }
 
     fn if_statement(&mut self) -> ParserResult<Stmt> {

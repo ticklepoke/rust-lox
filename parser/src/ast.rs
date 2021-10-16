@@ -2,13 +2,14 @@ use lexer::literal::Literal;
 use lexer::token::Token;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Stmt {
     Expr(Expr),
     Print(Expr),
     Var(Token, Option<Expr>),
     Block(Vec<Stmt>),
     If(Expr, Box<Stmt>, Option<Box<Stmt>>),
+    While(Expr, Box<Stmt>),
 }
 
 impl fmt::Display for Stmt {
@@ -33,11 +34,14 @@ impl fmt::Display for Stmt {
                     write!(f, "({} {})", condition, consequent)
                 }
             }
+            Stmt::While(ref condition, ref body) => {
+                write!(f, "({} {})", condition, body)
+            }
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Grouping(Box<Expr>),

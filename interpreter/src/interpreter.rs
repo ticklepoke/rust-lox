@@ -41,6 +41,7 @@ impl Interpreter {
                 Stmt::If(condition, consequent, alternative) => {
                     self.if_statement(condition, *consequent, alternative.map(|alt| *alt))?
                 }
+                Stmt::While(condition, body) => self.while_statement(condition, *body)?,
             }
         }
         Ok(())
@@ -64,6 +65,13 @@ impl Interpreter {
         self.environment = e;
         self.interpret(stmts)?;
         self.environment = *self.environment.clone().enclosing.unwrap();
+        Ok(())
+    }
+
+    fn while_statement(&mut self, condition: Expr, body: Stmt) -> InterpreterResult<()> {
+        while bool::from(self.evaluate(condition.clone())?) {
+            self.interpret(vec![body.clone()])?;
+        }
         Ok(())
     }
 

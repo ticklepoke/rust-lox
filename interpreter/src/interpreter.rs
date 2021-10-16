@@ -1,6 +1,6 @@
 use crate::environment::Environment;
 use lexer::literal::{Literal, TryFromWrapper};
-use lexer::token::Token;
+use lexer::token::{Token, TokenType};
 use parser::ast::{Expr, Stmt};
 use std::convert::TryFrom;
 use utils::errors::InterpreterError;
@@ -54,6 +54,9 @@ impl Interpreter {
             Expr::Binary(left, operator, right) => self.binary_expr(*left, operator, *right),
             Expr::Variable(name) => self.var_expression(name),
             Expr::Assign(name, init) => self.assignment_expression(name, *init),
+            Expr::Logical(left, operator, right) => {
+                self.logical_expression(*left, operator, *right)
+            }
         }
     }
 
@@ -78,7 +81,25 @@ impl Interpreter {
         Ok(())
     }
 
-    // TODO: should be modifying enclosing scopes
+    fn logical_expression(
+        &mut self,
+        left: Expr,
+        operator: Token,
+        right: Expr,
+    ) -> InterpreterResult<Literal> {
+        let left = self.evaluate(left)?;
+        if operator.token_type == TokenType::Or {
+            if bool::from(left.clone()) {
+                return Ok(left);
+            }
+        } else {
+            if !bool::from(left.clone()) {
+                return Ok(left);
+            }
+        }
+        return Ok(self.evaluate(right)?);
+    }
+
     fn assignment_expression(&mut self, name: Token, init: Expr) -> InterpreterResult<Literal> {
         let value = self.evaluate(init)?;
         if let Some(name) = name.lexeme {

@@ -24,9 +24,9 @@ impl Interpreter {
         Interpreter { environment: e }
     }
 
-    pub fn interpret(&mut self, stmts: Vec<Box<Stmt>>) -> InterpreterResult<()> {
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> InterpreterResult<()> {
         for stmt in stmts {
-            match *stmt {
+            match stmt {
                 Stmt::Expr(e) => {
                     self.evaluate(e)?;
                 }
@@ -54,13 +54,14 @@ impl Interpreter {
         }
     }
 
-    fn block(&mut self, stmts: Vec<Box<Stmt>>, e: Environment) -> InterpreterResult<()> {
+    fn block(&mut self, stmts: Vec<Stmt>, e: Environment) -> InterpreterResult<()> {
         self.environment = e;
         self.interpret(stmts)?;
         self.environment = *self.environment.clone().enclosing.unwrap();
         Ok(())
     }
 
+    // TODO: should be modifying enclosing scopes
     fn assignment_expression(&mut self, name: Token, init: Expr) -> InterpreterResult<Literal> {
         let value = self.evaluate(init)?;
         if let Some(name) = name.lexeme {

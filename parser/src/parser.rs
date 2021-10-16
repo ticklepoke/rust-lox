@@ -15,11 +15,11 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> ParserResult<Vec<Box<Stmt>>> {
+    pub fn parse(&mut self) -> ParserResult<Vec<Stmt>> {
         let mut statements = Vec::new();
         while !self.is_end() {
             if let Ok(decl) = self.declaration() {
-                statements.push(Box::new(decl));
+                statements.push(decl);
             }
         }
         Ok(statements)
@@ -65,11 +65,11 @@ impl Parser {
         self.expression_statement()
     }
 
-    fn block(&mut self) -> ParserResult<Vec<Box<Stmt>>> {
+    fn block(&mut self) -> ParserResult<Vec<Stmt>> {
         let mut stmts = Vec::new();
 
         while !self.check(TokenType::RightBrace) && !self.is_end() {
-            stmts.push(Box::new(self.declaration()?));
+            stmts.push(self.declaration()?);
         }
 
         self.consume(

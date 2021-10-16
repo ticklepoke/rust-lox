@@ -7,7 +7,7 @@ pub enum Stmt {
     Expr(Expr),
     Print(Expr),
     Var(Token, Option<Expr>),
-    Block(Vec<Box<Stmt>>),
+    Block(Vec<Stmt>),
 }
 
 impl fmt::Display for Stmt {

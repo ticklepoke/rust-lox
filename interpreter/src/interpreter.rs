@@ -39,17 +39,27 @@ impl Interpreter {
         Ok(())
     }
 
-    fn evaluate(&self, expr: Expr) -> InterpreterResult<Literal> {
+    fn evaluate(&mut self, expr: Expr) -> InterpreterResult<Literal> {
         match expr {
             Expr::Literal(l) => Ok(l),
             Expr::Grouping(e) => self.evaluate(*e),
             Expr::Unary(operator, right) => self.unary_expr(operator, *right),
             Expr::Binary(left, operator, right) => self.binary_expr(*left, operator, *right),
             Expr::Variable(name) => self.var_expression(name),
+            Expr::Assign(name, init) => self.assignment_expression(name, *init),
         }
     }
 
-    fn print_statement(&self, expr: Expr) -> InterpreterResult<()> {
+    fn assignment_expression(&mut self, name: Token, init: Expr) -> InterpreterResult<Literal> {
+        let value = self.evaluate(init)?;
+        if let Some(name) = name.lexeme {
+            let assign_result = self.environment.assign(name, value.clone());
+            return assign_result.map(|()| value);
+        }
+        Ok(value)
+    }
+
+    fn print_statement(&mut self, expr: Expr) -> InterpreterResult<()> {
         let value = self.evaluate(expr)?;
         println!("{}", value);
         Ok(())
@@ -79,7 +89,7 @@ impl Interpreter {
         Ok(Literal::Nil)
     }
 
-    fn unary_expr(&self, operator: Token, right: Expr) -> InterpreterResult<Literal> {
+    fn unary_expr(&mut self, operator: Token, right: Expr) -> InterpreterResult<Literal> {
         let right = self.evaluate(right)?;
         use lexer::token::TokenType::*;
         match operator.token_type {
@@ -89,7 +99,12 @@ impl Interpreter {
         }
     }
 
-    fn binary_expr(&self, left: Expr, operator: Token, right: Expr) -> InterpreterResult<Literal> {
+    fn binary_expr(
+        &mut self,
+        left: Expr,
+        operator: Token,
+        right: Expr,
+    ) -> InterpreterResult<Literal> {
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;
 

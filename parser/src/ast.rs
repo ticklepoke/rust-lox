@@ -8,6 +8,7 @@ pub enum Stmt {
     Print(Expr),
     Var(Token, Option<Expr>),
     Block(Vec<Stmt>),
+    If(Expr, Box<Stmt>, Option<Box<Stmt>>),
 }
 
 impl fmt::Display for Stmt {
@@ -25,6 +26,13 @@ impl fmt::Display for Stmt {
                 }
                 return write!(f, "({})", output);
             }
+            Stmt::If(ref condition, ref consequent, ref alternative) => {
+                if let Some(alt) = alternative {
+                    write!(f, "({} {} {})", condition, consequent, alt)
+                } else {
+                    write!(f, "({} {})", condition, consequent)
+                }
+            }
         }
     }
 }
@@ -38,7 +46,6 @@ pub enum Expr {
     Variable(Token),
     Assign(Token, Box<Expr>),
 }
-
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {

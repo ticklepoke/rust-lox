@@ -1,0 +1,4 @@
+print true and 1;
+print false and 2;
+print true or 3;
+print false or 4;

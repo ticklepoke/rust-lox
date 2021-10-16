@@ -76,16 +76,28 @@ impl TryFrom<Literal> for String {
     }
 }
 
-impl TryFrom<Literal> for bool {
+// Hack: Conflicting implementation for trait, circumvents E0119
+pub struct TryFromWrapper<T>(pub T);
+impl TryFrom<TryFromWrapper<Literal>> for bool {
     type Error = InterpreterError;
 
-    fn try_from(value: Literal) -> Result<Self, Self::Error> {
-        if let Literal::Boolean(b) = value {
+    fn try_from(value: TryFromWrapper<Literal>) -> Result<Self, Self::Error> {
+        if let Literal::Boolean(b) = value.0 {
             Ok(b)
         } else {
             Err(InterpreterError::InvalidCoercion(
                 "Unable to coerce into boolean".to_string(),
             ))
+        }
+    }
+}
+
+impl From<Literal> for bool {
+    fn from(value: Literal) -> Self {
+        match value {
+            Literal::Nil => false,
+            Literal::Boolean(b) => b,
+            _ => true,
         }
     }
 }

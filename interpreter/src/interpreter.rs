@@ -1,5 +1,5 @@
 use crate::environment::Environment;
-use lexer::literal::Literal;
+use lexer::literal::{Literal, TryFromWrapper};
 use lexer::token::Token;
 use parser::ast::{Expr, Stmt};
 use std::convert::TryFrom;
@@ -38,6 +38,9 @@ impl Interpreter {
                     stmts,
                     Environment::new(Some(Box::new(self.environment.clone()))),
                 )?,
+                Stmt::If(condition, consequent, alternative) => {
+                    self.if_statement(condition, *consequent, alternative.map(|alt| *alt))?
+                }
             }
         }
         Ok(())
@@ -58,6 +61,20 @@ impl Interpreter {
         self.environment = e;
         self.interpret(stmts)?;
         self.environment = *self.environment.clone().enclosing.unwrap();
+        Ok(())
+    }
+
+    fn if_statement(
+        &mut self,
+        condition: Expr,
+        consequent: Stmt,
+        alternative: Option<Stmt>,
+    ) -> InterpreterResult<()> {
+        if bool::from(self.evaluate(condition)?) {
+            self.interpret(vec![consequent])?;
+        } else if let Some(alt) = alternative {
+            self.interpret(vec![alt])?;
+        }
         Ok(())
     }
 
@@ -106,7 +123,7 @@ impl Interpreter {
         use lexer::token::TokenType::*;
         match operator.token_type {
             Minus => Ok(Literal::Number(-(f64::try_from(right)?))),
-            Bang => Ok(Literal::Boolean(!(bool::try_from(right)?))),
+            Bang => Ok(Literal::Boolean(!(bool::try_from(TryFromWrapper(right))?))),
             _ => Err(InterpreterError::InvalidAstType),
         }
     }

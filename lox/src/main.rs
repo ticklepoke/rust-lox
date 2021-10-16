@@ -4,6 +4,9 @@ extern crate parser;
 
 mod lox;
 
+#[cfg(test)]
+mod integration_tests;
+
 use interpreter::environment::Environment;
 use interpreter::interpreter::Interpreter;
 use std::{env, path};

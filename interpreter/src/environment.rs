@@ -40,6 +40,7 @@ impl Environment {
         }
 
         if let Some(mut parent) = self.enclosing.clone() {
+            println!("outer scope");
             return parent.assign(name, value);
         }
 

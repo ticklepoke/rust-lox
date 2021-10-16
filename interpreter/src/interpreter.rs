@@ -100,12 +100,10 @@ impl Interpreter {
             if bool::from(left.clone()) {
                 return Ok(left);
             }
-        } else {
-            if !bool::from(left.clone()) {
-                return Ok(left);
-            }
+        } else if !bool::from(left.clone()) {
+            return Ok(left);
         }
-        return Ok(self.evaluate(right)?);
+        self.evaluate(right)
     }
 
     fn assignment_expression(&mut self, name: Token, init: Expr) -> InterpreterResult<Literal> {

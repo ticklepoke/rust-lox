@@ -12,7 +12,7 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut lox = lox::Lox::new();
 
-    let env = Environment::new();
+    let env = Environment::new(None);
     let mut interpreter = Interpreter::new(env);
 
     if args.len() == 1 {

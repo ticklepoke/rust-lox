@@ -5,7 +5,7 @@ var c = "global c";
     var a = "outer a";
     var b = "outer b";
     {
-        var a = "inner a";
+        a = "inner a";
         print a;
         print b;
         print c;

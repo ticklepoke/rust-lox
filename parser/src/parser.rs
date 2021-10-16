@@ -15,11 +15,11 @@ impl Parser {
         Parser { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> ParserResult<Vec<Stmt>> {
+    pub fn parse(&mut self) -> ParserResult<Vec<Box<Stmt>>> {
         let mut statements = Vec::new();
         while !self.is_end() {
             if let Ok(decl) = self.declaration() {
-                statements.push(decl);
+                statements.push(Box::new(decl));
             }
         }
         Ok(statements)
@@ -59,7 +59,24 @@ impl Parser {
         if self.match_token(vec![TokenType::Print]) {
             return self.print_statement();
         }
+        if self.match_token(vec![TokenType::LeftBrace]) {
+            return Ok(Stmt::Block(self.block()?));
+        }
         self.expression_statement()
+    }
+
+    fn block(&mut self) -> ParserResult<Vec<Box<Stmt>>> {
+        let mut stmts = Vec::new();
+
+        while !self.check(TokenType::RightBrace) && !self.is_end() {
+            stmts.push(Box::new(self.declaration()?));
+        }
+
+        self.consume(
+            TokenType::RightBrace,
+            "Expected '}' after block".to_string(),
+        )?;
+        Ok(stmts)
     }
 
     fn print_statement(&mut self) -> ParserResult<Stmt> {

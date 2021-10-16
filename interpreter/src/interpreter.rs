@@ -14,7 +14,7 @@ pub struct Interpreter {
 impl Default for Interpreter {
     fn default() -> Self {
         Interpreter {
-            environment: Environment::new(),
+            environment: Environment::new(None),
         }
     }
 }
@@ -24,9 +24,9 @@ impl Interpreter {
         Interpreter { environment: e }
     }
 
-    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> InterpreterResult<()> {
+    pub fn interpret(&mut self, stmts: Vec<Box<Stmt>>) -> InterpreterResult<()> {
         for stmt in stmts {
-            match stmt {
+            match *stmt {
                 Stmt::Expr(e) => {
                     self.evaluate(e)?;
                 }
@@ -34,6 +34,10 @@ impl Interpreter {
                     self.print_statement(e)?;
                 }
                 Stmt::Var(name, init) => self.var_statement(name, init)?,
+                Stmt::Block(stmts) => self.block(
+                    stmts,
+                    Environment::new(Some(Box::new(self.environment.clone()))),
+                )?,
             }
         }
         Ok(())
@@ -48,6 +52,13 @@ impl Interpreter {
             Expr::Variable(name) => self.var_expression(name),
             Expr::Assign(name, init) => self.assignment_expression(name, *init),
         }
+    }
+
+    fn block(&mut self, stmts: Vec<Box<Stmt>>, e: Environment) -> InterpreterResult<()> {
+        self.environment = e;
+        self.interpret(stmts)?;
+        self.environment = *self.environment.clone().enclosing.unwrap();
+        Ok(())
     }
 
     fn assignment_expression(&mut self, name: Token, init: Expr) -> InterpreterResult<Literal> {

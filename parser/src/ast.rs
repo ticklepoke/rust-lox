@@ -7,6 +7,7 @@ pub enum Stmt {
     Expr(Expr),
     Print(Expr),
     Var(Token, Option<Expr>),
+    Block(Vec<Box<Stmt>>),
 }
 
 impl fmt::Display for Stmt {
@@ -17,6 +18,13 @@ impl fmt::Display for Stmt {
                 Some(ref init) => write!(f, "({} {})", name, init),
                 None => write!(f, "({})", name),
             },
+            Stmt::Block(ref stmts) => {
+                let mut output = String::new();
+                for s in stmts {
+                    output.push_str(format!("({})", s).as_str());
+                }
+                return write!(f, "({})", output);
+            }
         }
     }
 }

@@ -19,6 +19,7 @@ pub enum InterpreterError {
     InvalidCoercion(String),
     InvalidAstType,
     UndefinedVariable(String),
+    MismatchFunctionArity,
 }
 
 #[derive(Debug)]
@@ -26,6 +27,7 @@ pub enum ParserError {
     UnexpectedToken(String, usize),
     GenericError(String, usize),
     InvalidAssignmentTarget,
+    ArgumentCountExceeded,
 }
 
 impl fmt::Display for ScannerError {

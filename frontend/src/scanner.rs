@@ -9,7 +9,7 @@ use crate::token::{Token, TokenType};
  * TODO: Block style comments
  */
 
-type ScannerResult<T> = Result<T, ScannerError>;
+pub type ScannerResult<T> = Result<T, ScannerError>;
 
 pub struct Scanner<'a> {
     source: iter::Peekable<str::Chars<'a>>,

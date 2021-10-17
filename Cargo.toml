@@ -1,3 +1,3 @@
 [workspace]
 
-members = ["lox", "lexer", "parser", "interpreter", "utils"]
+members = ["lox", "interpreter", "utils", "frontend"]

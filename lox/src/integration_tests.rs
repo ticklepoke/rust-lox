@@ -1,5 +1,5 @@
 use crate::lox::Lox;
-use interpreter::environment::Environment;
+use frontend::environment::Environment;
 use interpreter::interpreter::Interpreter;
 use std::env;
 use std::path;

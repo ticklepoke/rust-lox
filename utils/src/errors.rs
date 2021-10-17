@@ -12,6 +12,7 @@ pub enum ScannerError {
     UntermiantedString(usize),
     InvalidCharacter(char, usize),
     InvalidTerm(String, usize),
+    UnknownError,
 }
 
 #[derive(Debug)]
@@ -45,6 +46,7 @@ impl fmt::Display for ScannerError {
             ScannerError::InvalidTerm(s, line_number) => {
                 write!(f, "Invalid term {} at line {}", s.clone(), line_number)
             }
+            ScannerError::UnknownError => write!(f, "Unknown error"),
         }
     }
 }
@@ -56,6 +58,7 @@ impl ScannerError {
             ScannerError::UntermiantedString(line_number) => line_number,
             ScannerError::InvalidCharacter(_, line_number) => line_number,
             ScannerError::InvalidTerm(_, line_number) => line_number,
+            ScannerError::UnknownError => 0,
         }
     }
 }

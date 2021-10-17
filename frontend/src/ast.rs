@@ -85,7 +85,7 @@ impl fmt::Display for Expr {
                 write!(f, "({} = {})", name, init)
             }
             Expr::Call(ref callee, ref _paren, ref args) => {
-                write!(f, "({} ({:?}))", callee, args)
+                write!(f, "(functionCall {} ({:?}))", callee, args)
             }
         }
     }

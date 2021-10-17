@@ -6,6 +6,7 @@ use std::fmt;
 pub enum Stmt {
     Block(Vec<Stmt>),
     Expr(Expr),
+    Function(Token, Vec<Token>, Vec<Stmt>),
     If(Expr, Box<Stmt>, Option<Box<Stmt>>),
     Print(Expr),
     Var(Token, Option<Expr>),
@@ -37,6 +38,7 @@ impl fmt::Display for Stmt {
             Stmt::While(ref condition, ref body) => {
                 write!(f, "({} {})", condition, body)
             }
+            Stmt::Function(ref name, ..) => write!(f, "function {}", name),
         }
     }
 }

@@ -1,10 +1,10 @@
 use std::io::prelude::*;
 use std::{fs, io, path, process};
 
+use frontend::parser::Parser;
+use frontend::scanner::Scanner;
+use frontend::token::Token;
 use interpreter::interpreter::Interpreter;
-use lexer::scanner::Scanner;
-use lexer::token::Token;
-use parser::parser::Parser;
 
 pub struct Lox {
     error: Option<String>,

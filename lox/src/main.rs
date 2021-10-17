@@ -1,13 +1,12 @@
+extern crate frontend;
 extern crate interpreter;
-extern crate lexer;
-extern crate parser;
 
 mod lox;
 
 #[cfg(test)]
 mod integration_tests;
 
-use interpreter::environment::Environment;
+use frontend::environment::Environment;
 use interpreter::interpreter::Interpreter;
 use std::{env, path};
 

@@ -1,3 +1,4 @@
+use crate::callable::Callable;
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
 use std::fmt::Display;
@@ -9,6 +10,7 @@ pub enum Literal {
     Number(f64),
     Boolean(bool),
     Nil,
+    Callable(Box<dyn Callable>),
 }
 
 impl Display for Literal {
@@ -18,6 +20,7 @@ impl Display for Literal {
             Self::Number(fl) => write!(f, "{}", fl),
             Self::Boolean(b) => write!(f, "{}", b),
             Self::Nil => write!(f, "Nil"),
+            Self::Callable(_c) => write!(f, "Callable"),
         }
     }
 }

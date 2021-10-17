@@ -1,7 +1,8 @@
-use crate::interpreter::InterpreterResult;
-use lexer::literal::Literal;
+use crate::literal::Literal;
 use std::collections::HashMap;
 use utils::errors::InterpreterError;
+
+type InterpreterResult<T> = Result<T, InterpreterError>;
 
 #[derive(Debug, Clone)]
 pub struct Environment {

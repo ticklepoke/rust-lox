@@ -1,14 +1,14 @@
-use lexer::literal::Literal;
-use lexer::token::Token;
+use crate::literal::Literal;
+use crate::token::Token;
 use std::fmt;
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
+    Block(Vec<Stmt>),
     Expr(Expr),
+    If(Expr, Box<Stmt>, Option<Box<Stmt>>),
     Print(Expr),
     Var(Token, Option<Expr>),
-    Block(Vec<Stmt>),
-    If(Expr, Box<Stmt>, Option<Box<Stmt>>),
     While(Expr, Box<Stmt>),
 }
 
@@ -43,14 +43,16 @@ impl fmt::Display for Stmt {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
+    Assign(Token, Box<Expr>),
     Binary(Box<Expr>, Token, Box<Expr>),
+    Call(Box<Expr>, Token, Vec<Expr>),
     Grouping(Box<Expr>),
     Literal(Literal),
     Logical(Box<Expr>, Token, Box<Expr>),
     Unary(Token, Box<Expr>),
     Variable(Token),
-    Assign(Token, Box<Expr>),
 }
+
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
@@ -79,6 +81,9 @@ impl fmt::Display for Expr {
             }
             Expr::Assign(ref name, ref init) => {
                 write!(f, "({} = {})", name, init)
+            }
+            Expr::Call(ref callee, ref _paren, ref args) => {
+                write!(f, "({} ({:?}))", callee, args)
             }
         }
     }

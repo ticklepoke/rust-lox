@@ -1,6 +1,6 @@
 use crate::ast::{Expr, Stmt};
-use lexer::literal::Literal;
-use lexer::token::{Token, TokenType};
+use crate::literal::Literal;
+use crate::token::{Token, TokenType};
 use utils::errors::ParserError;
 
 pub type ParserResult<T> = Result<T, ParserError>;
@@ -273,7 +273,41 @@ impl Parser {
             let right = self.unary()?;
             return Ok(Expr::Unary(operator, Box::new(right)));
         }
-        self.primary()
+        self.call()
+    }
+
+    fn call(&mut self) -> ParserResult<Expr> {
+        let mut expr = self.primary()?;
+        loop {
+            if self.match_token(vec![TokenType::LeftParen]) {
+                expr = self.finish_call(expr)?;
+            } else {
+                break;
+            }
+        }
+        Ok(expr)
+    }
+
+    fn finish_call(&mut self, callee: Expr) -> ParserResult<Expr> {
+        let mut args = Vec::new();
+        if !self.check(TokenType::RightParen) {
+            loop {
+                if args.len() >= 255 {
+                    return Err(ParserError::ArgumentCountExceeded);
+                }
+                args.push(self.expression()?);
+                if self.match_token(vec![TokenType::Comma]) {
+                    break;
+                }
+            }
+        }
+
+        let paren = self.consume(
+            TokenType::RightParen,
+            "Expect ')' after arguments".to_string(),
+        )?;
+
+        Ok(Expr::Call(Box::new(callee), paren, args))
     }
 
     fn primary(&mut self) -> ParserResult<Expr> {

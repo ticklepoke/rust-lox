@@ -1,7 +1,8 @@
-use crate::environment::Environment;
-use lexer::literal::{Literal, TryFromWrapper};
-use lexer::token::{Token, TokenType};
-use parser::ast::{Expr, Stmt};
+use frontend::ast::{Expr, Stmt};
+use frontend::environment::Environment;
+use frontend::literal::{Literal, TryFromWrapper};
+use frontend::runnable::Runnable;
+use frontend::token::{Token, TokenType};
 use std::convert::TryFrom;
 use utils::errors::InterpreterError;
 
@@ -16,6 +17,15 @@ impl Default for Interpreter {
         Interpreter {
             environment: Environment::new(None),
         }
+    }
+}
+
+impl Runnable for Interpreter {
+    fn block(&mut self, body: Vec<Stmt>, e: Environment) -> InterpreterResult<()> {
+        self.environment = e;
+        self.interpret(body)?;
+        self.environment = *self.environment.clone().enclosing.unwrap();
+        Ok(())
     }
 }
 
@@ -58,14 +68,26 @@ impl Interpreter {
             Expr::Logical(left, operator, right) => {
                 self.logical_expression(*left, operator, *right)
             }
+            Expr::Call(callee, _paren, args) => self.call_expression(*callee, args),
         }
     }
 
-    fn block(&mut self, stmts: Vec<Stmt>, e: Environment) -> InterpreterResult<()> {
-        self.environment = e;
-        self.interpret(stmts)?;
-        self.environment = *self.environment.clone().enclosing.unwrap();
-        Ok(())
+    fn call_expression(&mut self, callee: Expr, args: Vec<Expr>) -> InterpreterResult<Literal> {
+        let function = match self.evaluate(callee)? {
+            Literal::Callable(c) => c,
+            _ => return Err(InterpreterError::InvalidAstType),
+        };
+        let mut arg_literals = Vec::new();
+        for arg in args {
+            arg_literals.push(self.evaluate(arg)?);
+        }
+
+        if arg_literals.len() != function.arity() {
+            return Err(InterpreterError::MismatchFunctionArity);
+        }
+        function
+            .call(self, arg_literals)
+            .map_err(|_| InterpreterError::InvalidAstType)
     }
 
     fn while_statement(&mut self, condition: Expr, body: Stmt) -> InterpreterResult<()> {
@@ -147,7 +169,7 @@ impl Interpreter {
 
     fn unary_expr(&mut self, operator: Token, right: Expr) -> InterpreterResult<Literal> {
         let right = self.evaluate(right)?;
-        use lexer::token::TokenType::*;
+        use frontend::token::TokenType::*;
         match operator.token_type {
             Minus => Ok(Literal::Number(-(f64::try_from(right)?))),
             Bang => Ok(Literal::Boolean(!(bool::try_from(TryFromWrapper(right))?))),
@@ -164,7 +186,7 @@ impl Interpreter {
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;
 
-        use lexer::token::TokenType::*;
+        use frontend::token::TokenType::*;
         match operator.token_type {
             Minus => {
                 let left = f64::try_from(left)?;

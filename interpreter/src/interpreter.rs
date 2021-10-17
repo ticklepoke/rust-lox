@@ -4,39 +4,51 @@ use frontend::function::Function;
 use frontend::literal::{Literal, TryFromWrapper};
 use frontend::runnable::Runnable;
 use frontend::token::{Token, TokenType};
+use std::cell::RefCell;
 use std::convert::TryFrom;
+use std::mem;
+use std::rc::Rc;
 use utils::errors::InterpreterError;
 
 pub type InterpreterResult<T> = Result<T, InterpreterError>;
 
 pub struct Interpreter {
-    pub environment: Environment,
+    pub environment: Rc<RefCell<Environment>>,
+    pub globals: Rc<RefCell<Environment>>,
 }
 
 impl Default for Interpreter {
     fn default() -> Self {
+        let globals = Environment::new(None).into_cell();
+        let environment = Rc::clone(&globals);
         Interpreter {
-            environment: Environment::new(None),
+            globals,
+            environment,
         }
     }
 }
 
 impl Runnable for Interpreter {
-    fn block(&mut self, body: Vec<Stmt>, e: Environment) -> InterpreterResult<()> {
-        self.environment = e;
+    fn block(&mut self, body: Vec<Stmt>, e: Rc<RefCell<Environment>>) -> InterpreterResult<()> {
+        let previous = mem::replace(&mut self.environment, e);
         self.interpret(body)?;
-        self.environment = *self.environment.clone().enclosing.unwrap();
+        self.environment = previous;
         Ok(())
     }
 
-    fn get_env(&self) -> &Environment {
-        &self.environment
+    fn get_env(&self) -> Rc<RefCell<Environment>> {
+        Rc::clone(&self.environment)
     }
 }
 
 impl Interpreter {
     pub fn new(e: Environment) -> Self {
-        Interpreter { environment: e }
+        let globals = e.into_cell();
+        let environment = Rc::clone(&globals);
+        Interpreter {
+            globals,
+            environment,
+        }
     }
 
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> InterpreterResult<()> {
@@ -51,7 +63,7 @@ impl Interpreter {
                 Stmt::Var(name, init) => self.var_statement(name, init)?,
                 Stmt::Block(stmts) => self.block(
                     stmts,
-                    Environment::new(Some(Box::new(self.environment.clone()))),
+                    Environment::new(Some(Rc::clone(&self.environment))).into_cell(),
                 )?,
                 Stmt::If(condition, consequent, alternative) => {
                     self.if_statement(condition, *consequent, alternative.map(|alt| *alt))?
@@ -96,15 +108,11 @@ impl Interpreter {
             .map_err(|_| InterpreterError::InvalidAstType)
     }
 
-    fn function(
-        &mut self,
-        name: Token,
-        params: Vec<Token>,
-        body: Vec<Stmt>,
-    ) -> InterpreterResult<()> {
+    fn function(&self, name: Token, params: Vec<Token>, body: Vec<Stmt>) -> InterpreterResult<()> {
         let function = Function::new(params, body);
         if let Some(name) = name.lexeme {
             self.environment
+                .borrow_mut()
                 .define(name, Literal::Callable(Box::new(function)));
         }
         Ok(())
@@ -150,7 +158,7 @@ impl Interpreter {
     fn assignment_expression(&mut self, name: Token, init: Expr) -> InterpreterResult<Literal> {
         let value = self.evaluate(init)?;
         if let Some(name) = name.lexeme {
-            let assign_result = self.environment.assign(name, value.clone());
+            let assign_result = self.environment.borrow_mut().assign(name, value.clone());
             return assign_result.map(|()| value);
         }
         Ok(value)
@@ -170,8 +178,8 @@ impl Interpreter {
 
         if let Some(name) = name.lexeme {
             match value {
-                Some(v) => self.environment.define(name, v),
-                None => self.environment.define(name, Literal::Nil),
+                Some(v) => self.environment.borrow_mut().define(name, v),
+                None => self.environment.borrow_mut().define(name, Literal::Nil),
             }
         }
         Ok(())
@@ -179,7 +187,7 @@ impl Interpreter {
 
     fn var_expression(&self, name: Token) -> InterpreterResult<Literal> {
         let name = name.lexeme.expect("Expected lexeme for variable lookup");
-        let value = self.environment.get(name);
+        let value = self.environment.borrow().get(name);
         if let Some(value) = value {
             return Ok(value);
         }

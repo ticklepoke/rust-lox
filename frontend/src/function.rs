@@ -20,7 +20,7 @@ impl Callable for Function {
         interpreter: &mut dyn crate::runnable::Runnable,
         args: Vec<crate::literal::Literal>,
     ) -> crate::scanner::ScannerResult<crate::literal::Literal> {
-        let mut curr_env = Environment::new(Some(Box::new(interpreter.get_env().clone())));
+        let mut curr_env = Environment::new(Some(interpreter.get_env()));
 
         for (n, p) in args.into_iter().enumerate() {
             if let Some(name) = &self.params[n].lexeme {
@@ -29,7 +29,7 @@ impl Callable for Function {
         }
 
         interpreter
-            .block(self.body.clone(), curr_env)
+            .block(self.body.clone(), curr_env.into_cell())
             .map_err(|_| ScannerError::UnknownError)?;
 
         Ok(Literal::Nil)

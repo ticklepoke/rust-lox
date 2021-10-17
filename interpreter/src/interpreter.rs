@@ -9,7 +9,7 @@ use utils::errors::InterpreterError;
 pub type InterpreterResult<T> = Result<T, InterpreterError>;
 
 pub struct Interpreter {
-    environment: Environment,
+    pub environment: Environment,
 }
 
 impl Default for Interpreter {

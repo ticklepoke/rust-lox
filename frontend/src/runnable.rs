@@ -15,5 +15,5 @@ pub trait Runnable {
         environment: Rc<RefCell<Environment>>,
     ) -> InterpreterResult<()>;
 
-    fn get_env(&self) -> Rc<RefCell<Environment>>;
+    fn get_global(&self) -> Rc<RefCell<Environment>>;
 }

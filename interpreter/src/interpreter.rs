@@ -36,8 +36,8 @@ impl Runnable for Interpreter {
         Ok(())
     }
 
-    fn get_env(&self) -> Rc<RefCell<Environment>> {
-        Rc::clone(&self.environment)
+    fn get_global(&self) -> Rc<RefCell<Environment>> {
+        Rc::clone(&self.globals)
     }
 }
 

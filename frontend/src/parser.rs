@@ -67,14 +67,14 @@ impl Parser {
             format!("Expect '(' after {} name", kind).as_str(),
         )?;
         let mut params = Vec::new();
-        if self.check(TokenType::RightParen) {
+        if !self.check(TokenType::RightParen) {
             loop {
                 if params.len() >= 255 {
                     return Err(ParserError::ArgumentCountExceeded);
                 }
                 params.push(self.consume(TokenType::Identifier, "Expect param name")?);
 
-                if self.match_token(vec![TokenType::Comma]) {
+                if !self.match_token(vec![TokenType::Comma]) {
                     break;
                 }
             }
@@ -312,7 +312,7 @@ impl Parser {
                     return Err(ParserError::ArgumentCountExceeded);
                 }
                 args.push(self.expression()?);
-                if self.match_token(vec![TokenType::Comma]) {
+                if !self.match_token(vec![TokenType::Comma]) {
                     break;
                 }
             }

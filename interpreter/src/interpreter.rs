@@ -1,5 +1,6 @@
 use frontend::ast::{Expr, Stmt};
 use frontend::environment::Environment;
+use frontend::function::Function;
 use frontend::literal::{Literal, TryFromWrapper};
 use frontend::runnable::Runnable;
 use frontend::token::{Token, TokenType};
@@ -27,6 +28,10 @@ impl Runnable for Interpreter {
         self.environment = *self.environment.clone().enclosing.unwrap();
         Ok(())
     }
+
+    fn get_env(&self) -> &Environment {
+        &self.environment
+    }
 }
 
 impl Interpreter {
@@ -52,6 +57,7 @@ impl Interpreter {
                     self.if_statement(condition, *consequent, alternative.map(|alt| *alt))?
                 }
                 Stmt::While(condition, body) => self.while_statement(condition, *body)?,
+                Stmt::Function(name, params, body) => self.function(name, params, body)?,
             }
         }
         Ok(())
@@ -90,6 +96,19 @@ impl Interpreter {
             .map_err(|_| InterpreterError::InvalidAstType)
     }
 
+    fn function(
+        &mut self,
+        name: Token,
+        params: Vec<Token>,
+        body: Vec<Stmt>,
+    ) -> InterpreterResult<()> {
+        let function = Function::new(params, body);
+        if let Some(name) = name.lexeme {
+            self.environment
+                .define(name, Literal::Callable(Box::new(function)));
+        }
+        Ok(())
+    }
     fn while_statement(&mut self, condition: Expr, body: Stmt) -> InterpreterResult<()> {
         while bool::from(self.evaluate(condition.clone())?) {
             self.interpret(vec![body.clone()])?;

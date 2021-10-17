@@ -1,6 +1,7 @@
 // Scanner
 pub mod callable;
 pub mod environment;
+pub mod function;
 pub mod literal;
 pub mod runnable;
 pub mod scanner;

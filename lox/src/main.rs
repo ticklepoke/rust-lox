@@ -19,6 +19,7 @@ fn main() {
     // Add clock function to global env
     interpreter
         .environment
+        .borrow_mut()
         .define("clock".to_string(), Literal::Callable(Box::new(Clock {})));
 
     if args.len() == 1 {

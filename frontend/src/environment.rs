@@ -1,5 +1,5 @@
 use crate::literal::Literal;
-use std::collections::HashMap;
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use utils::errors::InterpreterError;
 
 type InterpreterResult<T> = Result<T, InterpreterError>;
@@ -7,11 +7,11 @@ type InterpreterResult<T> = Result<T, InterpreterError>;
 #[derive(Debug, Clone)]
 pub struct Environment {
     values: HashMap<String, Literal>,
-    pub enclosing: Option<Box<Environment>>,
+    pub enclosing: Option<Rc<RefCell<Environment>>>,
 }
 
 impl Environment {
-    pub fn new(enclosing: Option<Box<Environment>>) -> Self {
+    pub fn new(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
         Environment {
             values: HashMap::new(),
             enclosing,
@@ -28,7 +28,7 @@ impl Environment {
         }
 
         if let Some(parent) = &self.enclosing {
-            return parent.get(name);
+            return parent.borrow_mut().get(name);
         }
 
         None
@@ -40,10 +40,14 @@ impl Environment {
             return Ok(());
         }
 
-        if let Some(ref mut parent) = self.enclosing {
-            return parent.assign(name, value);
+        if let Some(parent) = &self.enclosing {
+            return parent.borrow_mut().assign(name, value);
         }
 
         Err(InterpreterError::UndefinedVariable(name))
+    }
+
+    pub fn into_cell(self) -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(self))
     }
 }

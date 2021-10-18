@@ -44,7 +44,7 @@ impl fmt::Display for ScannerError {
                 write!(f, "Invalid character {} at line {}", c, line_number)
             }
             ScannerError::InvalidTerm(s, line_number) => {
-                write!(f, "Invalid term {} at line {}", s.clone(), line_number)
+                write!(f, "Invalid term {} at line {}", s.as_str(), line_number)
             }
             ScannerError::UnknownError => write!(f, "Unknown error"),
         }

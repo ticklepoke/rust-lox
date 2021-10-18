@@ -205,7 +205,7 @@ impl<'a> Scanner<'a> {
             self.source.next();
         }
 
-        match self.keywords.get(&*captured_identifier) {
+        match self.keywords.get(captured_identifier.as_str()) {
             Some(keyword_token) => Ok(self.make_token(keyword_token.clone())),
             None => Ok(Token::new(
                 TokenType::Identifier,

@@ -55,7 +55,7 @@ impl Interpreter {
         for stmt in stmts {
             match stmt {
                 Stmt::Expr(e) => {
-                    self.evaluate(e)?;
+                    self.evaluate(&e)?;
                 }
                 Stmt::Print(e) => {
                     self.print_statement(e)?;
@@ -75,22 +75,24 @@ impl Interpreter {
         Ok(())
     }
 
-    fn evaluate(&mut self, expr: Expr) -> InterpreterResult<Literal> {
-        match expr {
-            Expr::Literal(l) => Ok(l),
-            Expr::Grouping(e) => self.evaluate(*e),
-            Expr::Unary(operator, right) => self.unary_expr(operator, *right),
-            Expr::Binary(left, operator, right) => self.binary_expr(*left, operator, *right),
-            Expr::Variable(name) => self.var_expression(name),
-            Expr::Assign(name, init) => self.assignment_expression(name, *init),
-            Expr::Logical(left, operator, right) => {
-                self.logical_expression(*left, operator, *right)
+    fn evaluate(&mut self, expr: &Expr) -> InterpreterResult<Literal> {
+        match *expr {
+            Expr::Literal(ref l) => Ok(l.clone()),
+            Expr::Grouping(ref e) => self.evaluate(e),
+            Expr::Unary(ref operator, ref right) => self.unary_expr(operator, right),
+            Expr::Binary(ref left, ref operator, ref right) => {
+                self.binary_expr(left, operator, right)
             }
-            Expr::Call(callee, _paren, args) => self.call_expression(*callee, args),
+            Expr::Variable(ref name) => self.var_expression(name),
+            Expr::Assign(ref name, ref init) => self.assignment_expression(name, init),
+            Expr::Logical(ref left, ref operator, ref right) => {
+                self.logical_expression(left, operator, right)
+            }
+            Expr::Call(ref callee, ref _paren, ref args) => self.call_expression(callee, args),
         }
     }
 
-    fn call_expression(&mut self, callee: Expr, args: Vec<Expr>) -> InterpreterResult<Literal> {
+    fn call_expression(&mut self, callee: &Expr, args: &[Expr]) -> InterpreterResult<Literal> {
         let function = match self.evaluate(callee)? {
             Literal::Callable(c) => c,
             _ => return Err(InterpreterError::InvalidAstType),
@@ -118,8 +120,8 @@ impl Interpreter {
         Ok(())
     }
     fn while_statement(&mut self, condition: Expr, body: Stmt) -> InterpreterResult<()> {
-        while bool::from(self.evaluate(condition.clone())?) {
-            self.interpret(vec![body.clone()])?;
+        while bool::from(self.evaluate(&condition)?) {
+            self.interpret(vec![body.clone()])?; // TODO expensive clone, how to use ref for this?
         }
         Ok(())
     }
@@ -130,7 +132,7 @@ impl Interpreter {
         consequent: Stmt,
         alternative: Option<Stmt>,
     ) -> InterpreterResult<()> {
-        if bool::from(self.evaluate(condition)?) {
+        if bool::from(self.evaluate(&condition)?) {
             self.interpret(vec![consequent])?;
         } else if let Some(alt) = alternative {
             self.interpret(vec![alt])?;
@@ -140,9 +142,9 @@ impl Interpreter {
 
     fn logical_expression(
         &mut self,
-        left: Expr,
-        operator: Token,
-        right: Expr,
+        left: &Expr,
+        operator: &Token,
+        right: &Expr,
     ) -> InterpreterResult<Literal> {
         let left = self.evaluate(left)?;
         if operator.token_type == TokenType::Or {
@@ -155,17 +157,20 @@ impl Interpreter {
         self.evaluate(right)
     }
 
-    fn assignment_expression(&mut self, name: Token, init: Expr) -> InterpreterResult<Literal> {
+    fn assignment_expression(&mut self, name: &Token, init: &Expr) -> InterpreterResult<Literal> {
         let value = self.evaluate(init)?;
-        if let Some(name) = name.lexeme {
-            let assign_result = self.environment.borrow_mut().assign(name, value.clone());
+        if let Some(name) = &name.lexeme {
+            let assign_result = self
+                .environment
+                .borrow_mut()
+                .assign(name.to_string(), value.clone());
             return assign_result.map(|()| value);
         }
         Ok(value)
     }
 
     fn print_statement(&mut self, expr: Expr) -> InterpreterResult<()> {
-        let value = self.evaluate(expr)?;
+        let value = self.evaluate(&expr)?;
         println!("{}", value);
         Ok(())
     }
@@ -173,7 +178,7 @@ impl Interpreter {
     fn var_statement(&mut self, name: Token, init: Option<Expr>) -> InterpreterResult<()> {
         let mut value = None;
         if init.is_some() {
-            value = Some(self.evaluate(init.unwrap())?);
+            value = Some(self.evaluate(&init.unwrap())?);
         }
 
         if let Some(name) = name.lexeme {
@@ -185,8 +190,11 @@ impl Interpreter {
         Ok(())
     }
 
-    fn var_expression(&self, name: Token) -> InterpreterResult<Literal> {
-        let name = name.lexeme.expect("Expected lexeme for variable lookup");
+    fn var_expression(&self, name: &Token) -> InterpreterResult<Literal> {
+        let name = name
+            .lexeme
+            .as_ref()
+            .expect("Expected lexeme for variable lookup");
         let value = self.environment.borrow().get(name);
         if let Some(value) = value {
             return Ok(value);
@@ -194,7 +202,7 @@ impl Interpreter {
         Ok(Literal::Nil)
     }
 
-    fn unary_expr(&mut self, operator: Token, right: Expr) -> InterpreterResult<Literal> {
+    fn unary_expr(&mut self, operator: &Token, right: &Expr) -> InterpreterResult<Literal> {
         let right = self.evaluate(right)?;
         use frontend::token::TokenType::*;
         match operator.token_type {
@@ -206,9 +214,9 @@ impl Interpreter {
 
     fn binary_expr(
         &mut self,
-        left: Expr,
-        operator: Token,
-        right: Expr,
+        left: &Expr,
+        operator: &Token,
+        right: &Expr,
     ) -> InterpreterResult<Literal> {
         let left = self.evaluate(left)?;
         let right = self.evaluate(right)?;

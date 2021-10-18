@@ -22,8 +22,8 @@ impl Environment {
         self.values.insert(name, value);
     }
 
-    pub fn get(&self, name: String) -> Option<Literal> {
-        if let Some(res) = self.values.get(&name) {
+    pub fn get(&self, name: &str) -> Option<Literal> {
+        if let Some(res) = self.values.get(name) {
             return Some(res.clone());
         }
 

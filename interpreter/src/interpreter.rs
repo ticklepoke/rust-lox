@@ -2,7 +2,7 @@ use frontend::ast::{Expr, Stmt};
 use frontend::environment::Environment;
 use frontend::function::Function;
 use frontend::literal::{Literal, TryFromWrapper};
-use frontend::runnable::Runnable;
+use frontend::runnable::{EarlyReturn, Runnable};
 use frontend::token::{Token, TokenType};
 use std::cell::RefCell;
 use std::convert::TryFrom;
@@ -10,7 +10,7 @@ use std::mem;
 use std::rc::Rc;
 use utils::errors::InterpreterError;
 
-pub type InterpreterResult<T> = Result<T, InterpreterError>;
+pub type InterpreterResult<T> = Result<T, EarlyReturn>;
 
 pub struct Interpreter {
     pub environment: Rc<RefCell<Environment>>,
@@ -70,6 +70,9 @@ impl Interpreter {
                 }
                 Stmt::While(condition, body) => self.while_statement(condition, *body)?,
                 Stmt::Function(name, params, body) => self.function(name, params, body)?,
+                Stmt::Return(_return_keyword, return_value) => {
+                    self.return_statement(return_value)?
+                }
             }
         }
         Ok(())
@@ -95,7 +98,7 @@ impl Interpreter {
     fn call_expression(&mut self, callee: &Expr, args: &[Expr]) -> InterpreterResult<Literal> {
         let function = match self.evaluate(callee)? {
             Literal::Callable(c) => c,
-            _ => return Err(InterpreterError::InvalidAstType),
+            _ => return Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
         };
         let mut arg_literals = Vec::new();
         for arg in args {
@@ -103,11 +106,11 @@ impl Interpreter {
         }
 
         if arg_literals.len() != function.arity() {
-            return Err(InterpreterError::MismatchFunctionArity);
+            return Err(EarlyReturn::Error(InterpreterError::MismatchFunctionArity));
         }
         function
             .call(self, arg_literals)
-            .map_err(|_| InterpreterError::InvalidAstType)
+            .map_err(|_| EarlyReturn::Error(InterpreterError::InvalidAstType))
     }
 
     fn function(&self, name: Token, params: Vec<Token>, body: Vec<Stmt>) -> InterpreterResult<()> {
@@ -119,6 +122,15 @@ impl Interpreter {
         }
         Ok(())
     }
+
+    fn return_statement(&mut self, return_value: Option<Expr>) -> InterpreterResult<()> {
+        if let Some(return_value) = return_value {
+            let value = self.evaluate(&return_value)?;
+            return Err(EarlyReturn::Return(value));
+        }
+        Err(EarlyReturn::Return(Literal::Nil))
+    }
+
     fn while_statement(&mut self, condition: Expr, body: Stmt) -> InterpreterResult<()> {
         while bool::from(self.evaluate(&condition)?) {
             self.interpret(vec![body.clone()])?; // TODO expensive clone, how to use ref for this?
@@ -164,7 +176,9 @@ impl Interpreter {
                 .environment
                 .borrow_mut()
                 .assign(name.to_string(), value.clone());
-            return assign_result.map(|()| value);
+            return assign_result
+                .map(|()| value)
+                .map_err(|e| EarlyReturn::Error(e));
         }
         Ok(value)
     }
@@ -208,7 +222,7 @@ impl Interpreter {
         match operator.token_type {
             Minus => Ok(Literal::Number(-(f64::try_from(right)?))),
             Bang => Ok(Literal::Boolean(!(bool::try_from(TryFromWrapper(right))?))),
-            _ => Err(InterpreterError::InvalidAstType),
+            _ => Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
         }
     }
 
@@ -243,7 +257,7 @@ impl Interpreter {
                     Ok(Literal::String(format!("{}{}", l, r)))
                 }
                 (Literal::Number(l), Literal::Number(r)) => Ok(Literal::Number(l + r)),
-                _ => Err(InterpreterError::InvalidAstType),
+                _ => Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
             },
             Greater => Ok(Literal::Boolean(left > right)),
             GreaterEqual => Ok(Literal::Boolean(left >= right)),
@@ -251,7 +265,7 @@ impl Interpreter {
             LessEqual => Ok(Literal::Boolean(left <= right)),
             EqualEqual => Ok(Literal::Boolean(left == right)),
             BangEqual => Ok(Literal::Boolean(left != right)),
-            _ => Err(InterpreterError::InvalidAstType),
+            _ => Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
         }
     }
 }

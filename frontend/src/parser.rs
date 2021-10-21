@@ -102,6 +102,9 @@ impl Parser {
         if self.match_token(vec![TokenType::Print]) {
             return self.print_statement();
         }
+        if self.match_token(vec![TokenType::Return]) {
+            return self.return_statement();
+        }
         if self.match_token(vec![TokenType::While]) {
             return self.while_statement();
         }
@@ -170,6 +173,16 @@ impl Parser {
             alternative = Some(Box::new(self.statement()?));
         }
         Ok(Stmt::If(condition, Box::new(consequent), alternative))
+    }
+
+    fn return_statement(&mut self) -> ParserResult<Stmt> {
+        let keyword = self.previous().clone();
+        let mut value = None;
+        if !self.check(TokenType::SemiColon) {
+            value = Some(self.expression()?);
+        }
+        self.consume(TokenType::SemiColon, "Expect ';' after return value")?;
+        return Ok(Stmt::Return(keyword, value));
     }
 
     fn block(&mut self) -> ParserResult<Vec<Stmt>> {

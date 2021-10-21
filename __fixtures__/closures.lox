@@ -1,0 +1,10 @@
+fun make() {
+    var str = "hello";
+    fun inner() {
+        print str;
+    }
+    return inner;
+}
+
+var outer = make();
+outer();

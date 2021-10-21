@@ -182,7 +182,7 @@ impl Parser {
             value = Some(self.expression()?);
         }
         self.consume(TokenType::SemiColon, "Expect ';' after return value")?;
-        return Ok(Stmt::Return(keyword, value));
+        Ok(Stmt::Return(keyword, value))
     }
 
     fn block(&mut self) -> ParserResult<Vec<Stmt>> {

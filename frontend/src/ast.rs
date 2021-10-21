@@ -9,6 +9,7 @@ pub enum Stmt {
     Function(Token, Vec<Token>, Vec<Stmt>),
     If(Expr, Box<Stmt>, Option<Box<Stmt>>),
     Print(Expr),
+    Return(Token, Option<Expr>),
     Var(Token, Option<Expr>),
     While(Expr, Box<Stmt>),
 }
@@ -39,6 +40,10 @@ impl fmt::Display for Stmt {
                 write!(f, "({} {})", condition, body)
             }
             Stmt::Function(ref name, ..) => write!(f, "function {}", name),
+            Stmt::Return(ref _return, ref return_value) => match return_value {
+                Some(return_value) => write!(f, "return {}", return_value),
+                None => write!(f, "return Nil"),
+            },
         }
     }
 }

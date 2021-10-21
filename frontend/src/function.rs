@@ -1,3 +1,5 @@
+use crate::runnable::EarlyReturn;
+use crate::scanner::ScannerResult;
 use utils::errors::ScannerError;
 
 use crate::{
@@ -19,7 +21,7 @@ impl Callable for Function {
         &self,
         interpreter: &mut dyn crate::runnable::Runnable,
         args: Vec<crate::literal::Literal>,
-    ) -> crate::scanner::ScannerResult<crate::literal::Literal> {
+    ) -> ScannerResult<crate::literal::Literal> {
         let mut curr_env = Environment::new(Some(interpreter.get_global()));
 
         for (n, p) in args.into_iter().enumerate() {
@@ -28,11 +30,15 @@ impl Callable for Function {
             }
         }
 
-        interpreter
-            .block(self.body.clone(), curr_env.into_cell())
-            .map_err(|_| ScannerError::UnknownError)?;
+        let res = interpreter.block(self.body.clone(), curr_env.into_cell());
 
-        Ok(Literal::Nil)
+        match res {
+            Ok(_) => Ok(Literal::Nil),
+            Err(e) => match e {
+                EarlyReturn::Error(_) => Err(ScannerError::UnknownError),
+                EarlyReturn::Return(val) => Ok(val),
+            },
+        }
     }
 
     fn box_clone(&self) -> Box<dyn Callable> {

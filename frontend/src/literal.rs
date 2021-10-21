@@ -1,4 +1,5 @@
 use crate::callable::Callable;
+use crate::runnable::EarlyReturn;
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
 use std::fmt::Display;
@@ -52,29 +53,29 @@ impl PartialOrd for Literal {
 }
 
 impl TryFrom<Literal> for f64 {
-    type Error = InterpreterError;
+    type Error = EarlyReturn;
 
     fn try_from(value: Literal) -> Result<Self, Self::Error> {
         if let Literal::Number(n) = value {
             Ok(n)
         } else {
-            Err(InterpreterError::InvalidCoercion(
+            Err(EarlyReturn::Error(InterpreterError::InvalidCoercion(
                 "Unable to coerce into number".to_string(),
-            ))
+            )))
         }
     }
 }
 
 impl TryFrom<Literal> for String {
-    type Error = InterpreterError;
+    type Error = EarlyReturn;
 
     fn try_from(value: Literal) -> Result<Self, Self::Error> {
         if let Literal::String(s) = value {
             Ok(s)
         } else {
-            Err(InterpreterError::InvalidCoercion(
+            Err(EarlyReturn::Error(InterpreterError::InvalidCoercion(
                 "Unable to coerce into string".to_string(),
-            ))
+            )))
         }
     }
 }
@@ -82,15 +83,15 @@ impl TryFrom<Literal> for String {
 // Hack: Conflicting implementation for trait, circumvents E0119
 pub struct TryFromWrapper<T>(pub T);
 impl TryFrom<TryFromWrapper<Literal>> for bool {
-    type Error = InterpreterError;
+    type Error = EarlyReturn;
 
     fn try_from(value: TryFromWrapper<Literal>) -> Result<Self, Self::Error> {
         if let Literal::Boolean(b) = value.0 {
             Ok(b)
         } else {
-            Err(InterpreterError::InvalidCoercion(
+            Err(EarlyReturn::Error(InterpreterError::InvalidCoercion(
                 "Unable to coerce into boolean".to_string(),
-            ))
+            )))
         }
     }
 }
@@ -106,15 +107,15 @@ impl From<Literal> for bool {
 }
 
 impl TryFrom<Literal> for () {
-    type Error = InterpreterError;
+    type Error = EarlyReturn;
 
     fn try_from(value: Literal) -> Result<Self, Self::Error> {
         if let Literal::Nil = value {
             Ok(())
         } else {
-            Err(InterpreterError::InvalidCoercion(
+            Err(EarlyReturn::Error(InterpreterError::InvalidCoercion(
                 "Unable to coerce into Nil".to_string(),
-            ))
+            )))
         }
     }
 }

@@ -176,9 +176,7 @@ impl Interpreter {
                 .environment
                 .borrow_mut()
                 .assign(name.to_string(), value.clone());
-            return assign_result
-                .map(|()| value)
-                .map_err(|e| EarlyReturn::Error(e));
+            return assign_result.map(|()| value).map_err(EarlyReturn::Error);
         }
         Ok(value)
     }

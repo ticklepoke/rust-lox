@@ -21,6 +21,4 @@ pub trait Runnable {
         body: Vec<Stmt>,
         environment: Rc<RefCell<Environment>>,
     ) -> InterpreterResult<()>;
-
-    fn get_global(&self) -> Rc<RefCell<Environment>>;
 }

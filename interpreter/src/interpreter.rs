@@ -35,10 +35,6 @@ impl Runnable for Interpreter {
         self.environment = previous;
         Ok(())
     }
-
-    fn get_global(&self) -> Rc<RefCell<Environment>> {
-        Rc::clone(&self.globals)
-    }
 }
 
 impl Interpreter {
@@ -114,7 +110,7 @@ impl Interpreter {
     }
 
     fn function(&self, name: Token, params: Vec<Token>, body: Vec<Stmt>) -> InterpreterResult<()> {
-        let function = Function::new(params, body);
+        let function = Function::new(params, body, Rc::clone(&self.environment));
         if let Some(name) = name.lexeme {
             self.environment
                 .borrow_mut()

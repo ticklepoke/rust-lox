@@ -34,6 +34,22 @@ impl Environment {
         None
     }
 
+    pub fn get_at(&self, distance: usize, name: &str) -> Option<Literal> {
+        self.ancestor(distance).borrow().get(name)
+    }
+
+    fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
+        // TODO wrong use of clone
+        let mut curr_env = self.clone().into_cell();
+        for _i in 0..distance {
+            let curr_env_ref = Rc::clone(&curr_env);
+            if let Some(encl) = &curr_env_ref.borrow().enclosing {
+                curr_env = Rc::clone(encl);
+            };
+        }
+        Rc::clone(&curr_env)
+    }
+
     pub fn assign(&mut self, name: String, value: Literal) -> InterpreterResult<()> {
         if self.values.contains_key(&name) {
             self.values.insert(name, value);
@@ -45,6 +61,19 @@ impl Environment {
         }
 
         Err(InterpreterError::UndefinedVariable(name))
+    }
+
+    pub fn assign_at(
+        &mut self,
+        distance: usize,
+        name: String,
+        value: Literal,
+    ) -> InterpreterResult<()> {
+        self.ancestor(distance)
+            .borrow_mut()
+            .values
+            .insert(name, value);
+        Ok(())
     }
 
     pub fn into_cell(self) -> Rc<RefCell<Self>> {

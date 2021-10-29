@@ -1,7 +1,7 @@
 use crate::literal::Literal;
 use std::fmt::Display;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TokenType {
     // Single character tokens
     LeftParen,
@@ -53,7 +53,7 @@ pub enum TokenType {
     EOF,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: Option<String>,

@@ -58,7 +58,12 @@ impl Lox {
         let mut parser = Parser::new(tokens);
         let ast = parser.parse().expect("Parser Error");
 
-        let resolver = Resolver::new(Rc::clone(&interpreter));
+        let mut resolver = Resolver::new(Rc::clone(&interpreter));
+        let resolver_res = resolver.resolve_stmts(&ast);
+
+        if resolver_res.is_err() {
+            panic!("Error from resolver");
+        }
 
         // Interpreter
         interpreter

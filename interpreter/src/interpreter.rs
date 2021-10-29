@@ -5,6 +5,7 @@ use frontend::literal::{Literal, TryFromWrapper};
 use frontend::runnable::{EarlyReturn, Runnable};
 use frontend::token::{Token, TokenType};
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::mem;
 use std::rc::Rc;
@@ -15,16 +16,12 @@ pub type InterpreterResult<T> = Result<T, EarlyReturn>;
 pub struct Interpreter {
     pub environment: Rc<RefCell<Environment>>,
     pub globals: Rc<RefCell<Environment>>,
+    locals: HashMap<Expr, usize>,
 }
 
 impl Default for Interpreter {
     fn default() -> Self {
-        let globals = Environment::new(None).into_cell();
-        let environment = Rc::clone(&globals);
-        Interpreter {
-            globals,
-            environment,
-        }
+        Interpreter::new(Environment::new(None))
     }
 }
 
@@ -41,9 +38,11 @@ impl Interpreter {
     pub fn new(e: Environment) -> Self {
         let globals = e.into_cell();
         let environment = Rc::clone(&globals);
+        let locals = HashMap::new();
         Interpreter {
             globals,
             environment,
+            locals,
         }
     }
 
@@ -82,13 +81,17 @@ impl Interpreter {
             Expr::Binary(ref left, ref operator, ref right) => {
                 self.binary_expr(left, operator, right)
             }
-            Expr::Variable(ref name) => self.var_expression(name),
-            Expr::Assign(ref name, ref init) => self.assignment_expression(name, init),
+            Expr::Variable(ref name) => self.var_expression(expr, name),
+            Expr::Assign(ref name, ref init) => self.assignment_expression(expr, name, init),
             Expr::Logical(ref left, ref operator, ref right) => {
                 self.logical_expression(left, operator, right)
             }
             Expr::Call(ref callee, ref _paren, ref args) => self.call_expression(callee, args),
         }
+    }
+
+    pub fn resolve(&mut self, expr: Expr, depth: usize) {
+        self.locals.insert(expr, depth);
     }
 
     fn call_expression(&mut self, callee: &Expr, args: &[Expr]) -> InterpreterResult<Literal> {
@@ -165,13 +168,28 @@ impl Interpreter {
         self.evaluate(right)
     }
 
-    fn assignment_expression(&mut self, name: &Token, init: &Expr) -> InterpreterResult<Literal> {
+    fn assignment_expression(
+        &mut self,
+        expr: &Expr,
+        name: &Token,
+        init: &Expr,
+    ) -> InterpreterResult<Literal> {
         let value = self.evaluate(init)?;
+
+        let distance = self.locals.get(expr);
+
         if let Some(name) = &name.lexeme {
-            let assign_result = self
-                .environment
-                .borrow_mut()
-                .assign(name.to_string(), value.clone());
+            let name = name.to_string();
+            let assign_result;
+            if let Some(distance) = distance {
+                assign_result =
+                    self.environment
+                        .borrow_mut()
+                        .assign_at(*distance, name, value.clone());
+            } else {
+                assign_result = self.globals.borrow_mut().assign(name, value.clone());
+            }
+
             return assign_result.map(|()| value).map_err(EarlyReturn::Error);
         }
         Ok(value)
@@ -198,16 +216,23 @@ impl Interpreter {
         Ok(())
     }
 
-    fn var_expression(&self, name: &Token) -> InterpreterResult<Literal> {
+    fn var_expression(&self, expr: &Expr, name: &Token) -> InterpreterResult<Literal> {
         let name = name
             .lexeme
             .as_ref()
             .expect("Expected lexeme for variable lookup");
-        let value = self.environment.borrow().get(name);
-        if let Some(value) = value {
-            return Ok(value);
+        self.lookup_variable(expr, name)
+    }
+
+    fn lookup_variable(&self, expr: &Expr, name: &str) -> InterpreterResult<Literal> {
+        let distance = self.locals.get(expr);
+        let res;
+        if let Some(distance) = distance {
+            res = self.environment.borrow().get_at(*distance, name);
+        } else {
+            res = self.globals.borrow().get(name);
         }
-        Ok(Literal::Nil)
+        res.ok_or_else(|| EarlyReturn::Error(InterpreterError::UndefinedVariable(name.to_string())))
     }
 
     fn unary_expr(&mut self, operator: &Token, right: &Expr) -> InterpreterResult<Literal> {

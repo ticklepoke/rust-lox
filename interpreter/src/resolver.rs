@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-enum ResolverError {
+pub enum ResolverError {
     UndefinedVariable,
 }
 
@@ -27,7 +27,7 @@ impl Resolver {
         }
     }
 
-    fn resolve_stmts(&mut self, stmts: Vec<Stmt>) -> ResolverResult<()> {
+    pub fn resolve_stmts(&mut self, stmts: &[Stmt]) -> ResolverResult<()> {
         for s in stmts {
             self.resolve_stmt(s)?;
         }
@@ -35,7 +35,7 @@ impl Resolver {
     }
 
     // TODO check if we can collapse this
-    fn resolve_stmt(&mut self, stmt: Stmt) -> ResolverResult<()> {
+    fn resolve_stmt(&mut self, stmt: &Stmt) -> ResolverResult<()> {
         match stmt {
             Stmt::Block(stmts) => self.block(stmts),
             Stmt::Var(name, init) => self.var_stmt(name, init),
@@ -45,10 +45,13 @@ impl Resolver {
                 self.if_stmt(condition, consequent, alternate)
             }
             Stmt::Print(ref expr) => self.resolve_expr(expr),
-            Stmt::Return(_name, expr) => expr.map(|e| self.resolve_expr(&e)).unwrap_or(Ok(())),
+            Stmt::Return(_name, expr) => expr
+                .as_ref()
+                .map(|e| self.resolve_expr(e))
+                .unwrap_or(Ok(())),
             Stmt::While(ref condition, body) => {
                 self.resolve_expr(condition)?;
-                self.resolve_stmt(*body)?;
+                self.resolve_stmt(body)?;
                 Ok(())
             }
         }
@@ -56,8 +59,8 @@ impl Resolver {
 
     fn resolve_expr(&self, expr: &Expr) -> ResolverResult<()> {
         match expr {
-            Expr::Variable(ref name) => self.var_expr(&expr, name),
-            Expr::Assign(ref name, ref init) => self.assign_expr(&expr, name, init),
+            Expr::Variable(ref name) => self.var_expr(expr, name),
+            Expr::Assign(ref name, ref init) => self.assign_expr(expr, name, init),
             Expr::Binary(left, _operator, right) => {
                 self.resolve_expr(left)?;
                 self.resolve_expr(right)?;
@@ -71,7 +74,7 @@ impl Resolver {
                 Ok(())
             }
             Expr::Grouping(expr) => self.resolve_expr(expr),
-            Expr::Literal(_literal) => Ok(()),
+            Expr::Literal(_literal) => Ok(()), // No op, we do not need to resolve literals
             Expr::Logical(left, _op, right) => {
                 self.resolve_expr(left)?;
                 self.resolve_expr(right)?;
@@ -94,19 +97,19 @@ impl Resolver {
         Ok(())
     }
 
-    fn block(&mut self, body: Vec<Stmt>) -> ResolverResult<()> {
+    fn block(&mut self, body: &[Stmt]) -> ResolverResult<()> {
         self.begin_scope();
         self.resolve_stmts(body)?;
         self.end_scope();
         Ok(())
     }
 
-    fn var_stmt(&mut self, name: Token, init: Option<Expr>) -> ResolverResult<()> {
-        self.declare(&name);
+    fn var_stmt(&mut self, name: &Token, init: &Option<Expr>) -> ResolverResult<()> {
+        self.declare(name);
         if let Some(init) = init {
-            self.resolve_expr(&init)?;
+            self.resolve_expr(init)?;
         }
-        self.define(&name);
+        self.define(name);
         Ok(())
     }
 
@@ -133,8 +136,8 @@ impl Resolver {
     fn function_stmt(
         &mut self,
         name: &Token,
-        params: Vec<Token>,
-        body: Vec<Stmt>,
+        params: &[Token],
+        body: &[Stmt],
     ) -> ResolverResult<()> {
         self.declare(name);
         self.define(name);
@@ -142,11 +145,11 @@ impl Resolver {
         Ok(())
     }
 
-    fn resolve_function(&mut self, params: Vec<Token>, body: Vec<Stmt>) -> ResolverResult<()> {
+    fn resolve_function(&mut self, params: &[Token], body: &[Stmt]) -> ResolverResult<()> {
         self.begin_scope();
         for p in params {
-            self.declare(&p);
-            self.define(&p);
+            self.declare(p);
+            self.define(p);
         }
         self.resolve_stmts(body)?;
         self.end_scope();
@@ -156,13 +159,13 @@ impl Resolver {
     fn if_stmt(
         &mut self,
         condition: &Expr,
-        consequent: Box<Stmt>,
-        alternate: Option<Box<Stmt>>,
+        consequent: &Stmt,
+        alternate: &Option<Box<Stmt>>,
     ) -> ResolverResult<()> {
         self.resolve_expr(condition)?;
-        self.resolve_stmt(*consequent)?;
+        self.resolve_stmt(consequent)?;
         if let Some(alt) = alternate {
-            self.resolve_stmt(*alt)?;
+            self.resolve_stmt(alt)?;
         }
         Ok(())
     }

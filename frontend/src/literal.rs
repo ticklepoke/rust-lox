@@ -3,6 +3,7 @@ use crate::runnable::EarlyReturn;
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
 use std::fmt::Display;
+use std::hash::Hash;
 use utils::errors::InterpreterError;
 
 #[derive(Debug, Clone)]
@@ -12,6 +13,18 @@ pub enum Literal {
     Boolean(bool),
     Nil,
     Callable(Box<dyn Callable>),
+}
+
+impl Hash for Literal {
+    fn hash<H: std::hash::Hasher>(&self, _state: &mut H) {
+        // Noop, since literals do not need to get resolved
+    }
+}
+
+impl Eq for Literal {
+    fn assert_receiver_is_total_eq(&self) {
+        // Noop
+    }
 }
 
 impl Display for Literal {

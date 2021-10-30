@@ -28,7 +28,6 @@ pub struct Resolver {
 #[allow(dead_code)]
 impl Resolver {
     pub fn new(interpreter: Rc<RefCell<Interpreter>>) -> Self {
-        // TODO check if inrepreter should be a ref
         Resolver {
             interpreter,
             scopes: Vec::new(),

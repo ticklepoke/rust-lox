@@ -35,12 +35,15 @@ impl Environment {
     }
 
     pub fn get_at(&mut self, distance: usize, name: &str) -> Option<Literal> {
+        if distance == 0 {
+            return self.values.get(name).cloned();
+        }
         self.ancestor(distance).borrow().get(name)
     }
 
     fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
-        let mut curr_env = self.clone().into_cell();
-        for _i in 0..distance {
+        let mut curr_env = Rc::clone(self.enclosing.as_ref().unwrap());
+        for _i in 1..distance {
             let curr_env_ref = Rc::clone(&curr_env);
             if let Some(encl) = &curr_env_ref.borrow().enclosing {
                 curr_env = Rc::clone(encl);

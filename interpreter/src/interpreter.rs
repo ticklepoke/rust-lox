@@ -230,7 +230,7 @@ impl Interpreter {
         if let Some(distance) = distance {
             res = self.environment.borrow_mut().get_at(*distance, name);
         } else {
-            res = self.globals.borrow().get(name);
+            res = self.environment.borrow().get(name);
         }
         res.ok_or_else(|| EarlyReturn::Error(InterpreterError::UndefinedVariable(name.to_string())))
     }

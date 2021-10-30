@@ -1,11 +1,10 @@
 use crate::literal::Literal;
-use std::mem::take;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use utils::errors::InterpreterError;
 
 type InterpreterResult<T> = Result<T, InterpreterError>;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone)]
 pub struct Environment {
     pub values: HashMap<String, Literal>,
     pub enclosing: Option<Rc<RefCell<Environment>>>,
@@ -39,8 +38,8 @@ impl Environment {
         self.ancestor(distance).borrow().get(name)
     }
 
-    fn ancestor(&mut self, distance: usize) -> Rc<RefCell<Environment>> {
-        let mut curr_env = take(self).into_cell();
+    fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
+        let mut curr_env = self.clone().into_cell();
         for _i in 0..distance {
             let curr_env_ref = Rc::clone(&curr_env);
             if let Some(encl) = &curr_env_ref.borrow().enclosing {

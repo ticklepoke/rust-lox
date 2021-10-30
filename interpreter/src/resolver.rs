@@ -7,14 +7,23 @@ use std::rc::Rc;
 
 pub enum ResolverError {
     UndefinedVariable,
+    ExistingVariable,
+    InvalidReturnStatement,
 }
 
 type ResolverResult<T> = Result<T, ResolverError>;
+
+#[derive(Clone)]
+enum FunctionType {
+    None,
+    Function,
+}
 
 #[allow(dead_code)]
 pub struct Resolver {
     interpreter: Rc<RefCell<Interpreter>>,
     scopes: Vec<HashMap<String, bool>>,
+    current_function: FunctionType,
 }
 
 #[allow(dead_code)]
@@ -24,6 +33,7 @@ impl Resolver {
         Resolver {
             interpreter,
             scopes: Vec::new(),
+            current_function: FunctionType::None,
         }
     }
 
@@ -34,7 +44,6 @@ impl Resolver {
         Ok(())
     }
 
-    // TODO check if we can collapse this
     fn resolve_stmt(&mut self, stmt: &Stmt) -> ResolverResult<()> {
         match stmt {
             Stmt::Block(stmts) => self.block(stmts),
@@ -45,10 +54,14 @@ impl Resolver {
                 self.if_stmt(condition, consequent, alternate)
             }
             Stmt::Print(ref expr) => self.resolve_expr(expr),
-            Stmt::Return(_name, expr) => expr
-                .as_ref()
-                .map(|e| self.resolve_expr(e))
-                .unwrap_or(Ok(())),
+            Stmt::Return(_name, expr) => {
+                if let FunctionType::None = self.current_function {
+                    return Err(ResolverError::InvalidReturnStatement);
+                }
+                expr.as_ref()
+                    .map(|e| self.resolve_expr(e))
+                    .unwrap_or(Ok(()))
+            }
             Stmt::While(ref condition, body) => {
                 self.resolve_expr(condition)?;
                 self.resolve_stmt(body)?;
@@ -105,7 +118,7 @@ impl Resolver {
     }
 
     fn var_stmt(&mut self, name: &Token, init: &Option<Expr>) -> ResolverResult<()> {
-        self.declare(name);
+        self.declare(name)?;
         if let Some(init) = init {
             self.resolve_expr(init)?;
         }
@@ -139,20 +152,28 @@ impl Resolver {
         params: &[Token],
         body: &[Stmt],
     ) -> ResolverResult<()> {
-        self.declare(name);
+        self.declare(name)?;
         self.define(name);
-        self.resolve_function(params, body)?;
+        self.resolve_function(params, body, FunctionType::Function)?;
         Ok(())
     }
 
-    fn resolve_function(&mut self, params: &[Token], body: &[Stmt]) -> ResolverResult<()> {
+    fn resolve_function(
+        &mut self,
+        params: &[Token],
+        body: &[Stmt],
+        f_type: FunctionType,
+    ) -> ResolverResult<()> {
+        let enclosing_function = self.current_function.clone();
+        self.current_function = f_type;
         self.begin_scope();
         for p in params {
-            self.declare(p);
+            self.declare(p)?;
             self.define(p);
         }
         self.resolve_stmts(body)?;
         self.end_scope();
+        self.current_function = enclosing_function;
         Ok(())
     }
 
@@ -171,15 +192,19 @@ impl Resolver {
     }
 
     // UTILS
-    fn declare(&mut self, name: &Token) {
+    fn declare(&mut self, name: &Token) -> ResolverResult<()> {
         if self.scopes.is_empty() {
-            return;
+            return Ok(());
         }
 
         let scope = self.scopes.last_mut().unwrap();
         if let Some(lexeme) = &name.lexeme {
+            if scope.contains_key(lexeme) {
+                return Err(ResolverError::ExistingVariable);
+            }
             scope.insert(lexeme.to_string(), false);
         }
+        Ok(())
     }
 
     fn define(&mut self, name: &Token) {

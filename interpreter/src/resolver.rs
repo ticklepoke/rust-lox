@@ -19,7 +19,6 @@ enum FunctionType {
     Function,
 }
 
-#[allow(dead_code)]
 pub struct Resolver {
     interpreter: Rc<RefCell<Interpreter>>,
     scopes: Vec<HashMap<String, bool>>,
@@ -97,12 +96,14 @@ impl Resolver {
         }
     }
 
-    fn resolve_local(&self, _expr: &Expr, name: &Token) -> ResolverResult<()> {
-        for i in (0..self.scopes.len() - 1).rev() {
+    fn resolve_local(&self, expr: &Expr, name: &Token) -> ResolverResult<()> {
+        for i in (0..self.scopes.len()).rev() {
             if let Some(name_str) = name.lexeme.clone() {
                 if let Some(curr_scope) = self.scopes.get(i) {
                     if curr_scope.contains_key(name_str.as_str()) {
-                        // interpreter.resolve(expr, self.scopes.len() -1 -i);
+                        self.interpreter
+                            .borrow_mut()
+                            .resolve(expr.clone(), self.scopes.len() - 1 - i);
                     }
                 }
             }

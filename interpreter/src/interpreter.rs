@@ -216,7 +216,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn var_expression(&self, expr: &Expr, name: &Token) -> InterpreterResult<Literal> {
+    fn var_expression(&mut self, expr: &Expr, name: &Token) -> InterpreterResult<Literal> {
         let name = name
             .lexeme
             .as_ref()
@@ -224,11 +224,11 @@ impl Interpreter {
         self.lookup_variable(expr, name)
     }
 
-    fn lookup_variable(&self, expr: &Expr, name: &str) -> InterpreterResult<Literal> {
+    fn lookup_variable(&mut self, expr: &Expr, name: &str) -> InterpreterResult<Literal> {
         let distance = self.locals.get(expr);
         let res;
         if let Some(distance) = distance {
-            res = self.environment.borrow().get_at(*distance, name);
+            res = self.environment.borrow_mut().get_at(*distance, name);
         } else {
             res = self.globals.borrow().get(name);
         }

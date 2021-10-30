@@ -1,12 +1,13 @@
 use crate::literal::Literal;
+use std::mem::take;
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use utils::errors::InterpreterError;
 
 type InterpreterResult<T> = Result<T, InterpreterError>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default)]
 pub struct Environment {
-    values: HashMap<String, Literal>,
+    pub values: HashMap<String, Literal>,
     pub enclosing: Option<Rc<RefCell<Environment>>>,
 }
 
@@ -34,13 +35,12 @@ impl Environment {
         None
     }
 
-    pub fn get_at(&self, distance: usize, name: &str) -> Option<Literal> {
+    pub fn get_at(&mut self, distance: usize, name: &str) -> Option<Literal> {
         self.ancestor(distance).borrow().get(name)
     }
 
-    fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
-        // TODO wrong use of clone
-        let mut curr_env = self.clone().into_cell();
+    fn ancestor(&mut self, distance: usize) -> Rc<RefCell<Environment>> {
+        let mut curr_env = take(self).into_cell();
         for _i in 0..distance {
             let curr_env_ref = Rc::clone(&curr_env);
             if let Some(encl) = &curr_env_ref.borrow().enclosing {

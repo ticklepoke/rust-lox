@@ -17,6 +17,7 @@ type ResolverResult<T> = Result<T, ResolverError>;
 enum FunctionType {
     None,
     Function,
+    Method,
 }
 
 pub struct Resolver {
@@ -65,9 +66,16 @@ impl Resolver {
                 self.resolve_stmt(body)?;
                 Ok(())
             }
-            Stmt::Class(ref name, _fns) => {
+            Stmt::Class(ref name, methods) => {
                 self.declare(name)?;
                 self.define(name);
+                for m in methods {
+                    if let Stmt::Function(_name, params, body) = m {
+                        let decl = FunctionType::Method;
+                        self.resolve_function(params, body, decl)?;
+                    }
+                }
+
                 Ok(())
             }
         }

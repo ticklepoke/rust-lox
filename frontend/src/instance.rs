@@ -20,12 +20,11 @@ impl Instance {
 
     pub fn get(&self, name: Token) -> Literal {
         if let Some(name) = name.lexeme {
-            return self
-                .fields
-                .borrow()
-                .get(name.as_str())
-                .unwrap_or(&Literal::Nil)
-                .clone();
+            if let Some(field) = self.fields.borrow().get(name.as_str()) {
+                // TODO HACK check if cloning leads to issues
+                return field.clone();
+            }
+            return self.class.get_method(name.as_str()).unwrap_or(Literal::Nil);
         };
         Literal::Nil
     }

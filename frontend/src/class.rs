@@ -1,16 +1,23 @@
 use crate::callable::Callable;
 use crate::instance::Instance;
 use crate::literal::Literal;
+use std::collections::HashMap;
 use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub struct Class {
     name: String,
+    methods: HashMap<String, Literal>,
 }
 
 impl Class {
-    pub fn new(name: String) -> Self {
-        Class { name }
+    pub fn new(name: String, methods: HashMap<String, Literal>) -> Self {
+        Class { name, methods }
+    }
+
+    pub fn get_method(&self, name: &str) -> Option<Literal> {
+        // TODO HACK to_owned might clone
+        self.methods.get(name).map(|m| m.to_owned())
     }
 }
 

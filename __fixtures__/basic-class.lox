@@ -1,0 +1,11 @@
+class Car {
+    hello() {
+        return "toyota";
+    }
+}
+
+print Car;
+
+var toyota = Car();
+
+print toyota;

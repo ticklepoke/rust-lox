@@ -12,6 +12,7 @@ pub enum Stmt {
     Return(Token, Option<Expr>),
     Var(Token, Option<Expr>),
     While(Expr, Box<Stmt>),
+    Class(Token, Vec<Stmt>),
 }
 
 impl fmt::Display for Stmt {
@@ -43,6 +44,10 @@ impl fmt::Display for Stmt {
             Stmt::Return(ref _return, ref return_value) => match return_value {
                 Some(return_value) => write!(f, "return {}", return_value),
                 None => write!(f, "return Nil"),
+            },
+            Stmt::Class(ref name, ..) => match &name.lexeme {
+                Some(n) => write!(f, "class {}", n),
+                None => write!(f, "class"),
             },
         }
     }

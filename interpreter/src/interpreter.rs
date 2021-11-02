@@ -1,4 +1,5 @@
 use frontend::ast::{Expr, Stmt};
+use frontend::class::Class;
 use frontend::environment::Environment;
 use frontend::function::Function;
 use frontend::literal::{Literal, TryFromWrapper};
@@ -68,6 +69,7 @@ impl Interpreter {
                 Stmt::Return(_return_keyword, return_value) => {
                     self.return_statement(return_value)?
                 }
+                Stmt::Class(name, _fns) => self.class_stmt(name)?,
             }
         }
         Ok(())
@@ -92,6 +94,20 @@ impl Interpreter {
 
     pub fn resolve(&mut self, expr: Expr, depth: usize) {
         self.locals.insert(expr, depth);
+    }
+
+    fn class_stmt(&mut self, name: Token) -> InterpreterResult<()> {
+        if let Some(lex) = name.lexeme {
+            self.environment
+                .borrow_mut()
+                .define(lex.clone(), Literal::Nil);
+            let class = Class::new(lex.clone());
+            self.environment
+                .borrow_mut()
+                .assign(lex, Literal::Callable(Box::new(class)))
+                .map_err(EarlyReturn::Error)?;
+        }
+        Ok(())
     }
 
     fn call_expression(&mut self, callee: &Expr, args: &[Expr]) -> InterpreterResult<Literal> {

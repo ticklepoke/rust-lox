@@ -62,6 +62,7 @@ pub enum Expr {
     Grouping(Box<Expr>),
     Literal(Literal),
     Logical(Box<Expr>, Token, Box<Expr>),
+    Set(Box<Expr>, Token, Box<Expr>),
     Unary(Token, Box<Expr>),
     Variable(Token),
 }
@@ -100,6 +101,9 @@ impl fmt::Display for Expr {
             }
             Expr::Get(ref object, ref name) => {
                 write!(f, "(Instance access {} ({:?}))", object, name)
+            }
+            Expr::Set(ref object, ref name, ref new_value) => {
+                write!(f, "({}.{} = {}", object, name, new_value)
             }
         }
     }

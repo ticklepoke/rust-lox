@@ -90,6 +90,7 @@ impl Interpreter {
             }
             Expr::Call(ref callee, ref _paren, ref args) => self.call_expression(callee, args),
             Expr::Get(ref obj, ref name) => self.get_expr(obj, name),
+            Expr::Set(ref obj, ref name, ref new_value) => self.set_expr(obj, name, new_value),
         }
     }
 
@@ -115,6 +116,22 @@ impl Interpreter {
         let obj = self.evaluate(obj)?;
         if let Literal::Instance(instance) = obj {
             Ok(instance.get(name.clone()))
+        } else {
+            Err(EarlyReturn::Error(InterpreterError::InvalidAstType))
+        }
+    }
+
+    fn set_expr(
+        &mut self,
+        obj: &Expr,
+        name: &Token,
+        new_value: &Expr,
+    ) -> InterpreterResult<Literal> {
+        let obj = self.evaluate(obj)?;
+        let new_value = self.evaluate(new_value)?;
+        if let Literal::Instance(mut instance) = obj {
+            instance.set(name.clone(), new_value.clone());
+            Ok(new_value)
         } else {
             Err(EarlyReturn::Error(InterpreterError::InvalidAstType))
         }

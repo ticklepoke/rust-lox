@@ -234,11 +234,11 @@ impl Parser {
         if self.match_token(vec![TokenType::Equal]) {
             let value = self.assignment()?;
 
-            if let Expr::Variable(name) = expr {
-                return Ok(Expr::Assign(name, Box::new(value)));
-            }
-
-            return Err(ParserError::InvalidAssignmentTarget);
+            return match expr {
+                Expr::Variable(name) => Ok(Expr::Assign(name, Box::new(value))),
+                Expr::Get(obj, field_name) => Ok(Expr::Set(obj, field_name, Box::new(value))),
+                _ => Err(ParserError::InvalidAssignmentTarget),
+            };
         }
 
         Ok(expr)

@@ -52,7 +52,7 @@ impl PartialEq for Literal {
             (&Literal::Nil, &Literal::Nil) => true,
             (&Literal::Instance(ref i), &Literal::Instance(ref j)) => {
                 // check for referential equality
-                i as *const _ == j as *const _
+                std::ptr::eq(i, j)
             }
             _ => false,
         }

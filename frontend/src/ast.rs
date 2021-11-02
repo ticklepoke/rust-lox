@@ -58,6 +58,7 @@ pub enum Expr {
     Assign(Token, Box<Expr>),
     Binary(Box<Expr>, Token, Box<Expr>),
     Call(Box<Expr>, Token, Vec<Expr>),
+    Get(Box<Expr>, Token),
     Grouping(Box<Expr>),
     Literal(Literal),
     Logical(Box<Expr>, Token, Box<Expr>),
@@ -96,6 +97,9 @@ impl fmt::Display for Expr {
             }
             Expr::Call(ref callee, ref _paren, ref args) => {
                 write!(f, "(functionCall {} ({:?}))", callee, args)
+            }
+            Expr::Get(ref object, ref name) => {
+                write!(f, "(Instance access {} ({:?}))", object, name)
             }
         }
     }

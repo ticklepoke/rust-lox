@@ -69,7 +69,7 @@ impl Interpreter {
                 Stmt::Return(_return_keyword, return_value) => {
                     self.return_statement(return_value)?
                 }
-                Stmt::Class(name, _fns) => self.class_stmt(name)?,
+                Stmt::Class(name, methods) => self.class_stmt(name, methods)?,
             }
         }
         Ok(())
@@ -98,12 +98,24 @@ impl Interpreter {
         self.locals.insert(expr, depth);
     }
 
-    fn class_stmt(&mut self, name: Token) -> InterpreterResult<()> {
+    fn class_stmt(&mut self, name: Token, methods: Vec<Stmt>) -> InterpreterResult<()> {
         if let Some(lex) = name.lexeme {
             self.environment
                 .borrow_mut()
                 .define(lex.clone(), Literal::Nil);
-            let class = Class::new(lex.clone());
+
+            let mut name_to_methods = HashMap::new();
+
+            for m in methods {
+                if let Stmt::Function(name, params, body) = m {
+                    let func = Function::new(params, body, Rc::clone(&self.environment));
+                    if let Some(name) = name.lexeme {
+                        name_to_methods.insert(name, Literal::Callable(Box::new(func)));
+                    }
+                }
+            }
+
+            let class = Class::new(lex.clone(), name_to_methods);
             self.environment
                 .borrow_mut()
                 .assign(lex, Literal::Callable(Box::new(class)))

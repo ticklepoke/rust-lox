@@ -45,4 +45,9 @@ impl Callable for Class {
         let instance = Instance::new(self.clone());
         Ok(Literal::Instance(instance))
     }
+
+    fn bind(&self, _instance: Instance) -> Box<dyn Callable> {
+        // HACK noop
+        self.box_clone()
+    }
 }

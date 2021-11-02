@@ -69,13 +69,18 @@ impl Resolver {
             Stmt::Class(ref name, methods) => {
                 self.declare(name)?;
                 self.define(name);
+                self.begin_scope();
+                self.scopes
+                    .last_mut()
+                    .unwrap()
+                    .insert("this".to_string(), true);
                 for m in methods {
                     if let Stmt::Function(_name, params, body) = m {
                         let decl = FunctionType::Method;
                         self.resolve_function(params, body, decl)?;
                     }
                 }
-
+                self.end_scope();
                 Ok(())
             }
         }
@@ -111,6 +116,7 @@ impl Resolver {
                 self.resolve_expr(new_value)?;
                 Ok(())
             }
+            Expr::This(name) => self.resolve_local(expr, name),
         }
     }
 

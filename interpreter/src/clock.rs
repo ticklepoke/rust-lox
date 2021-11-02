@@ -1,4 +1,4 @@
-use frontend::{callable::Callable, literal::Literal};
+use frontend::{callable::Callable, instance::Instance, literal::Literal};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
@@ -24,5 +24,10 @@ impl Callable for Clock {
 
     fn box_clone(&self) -> Box<dyn Callable> {
         Box::new(self.clone())
+    }
+
+    fn bind(&self, _instance: Instance) -> Box<dyn Callable> {
+        // HACK noop
+        self.box_clone()
     }
 }

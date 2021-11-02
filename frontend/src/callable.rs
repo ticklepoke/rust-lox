@@ -1,3 +1,4 @@
+use crate::instance::Instance;
 use crate::literal::Literal;
 use crate::runnable::Runnable;
 use crate::scanner::ScannerResult;
@@ -10,6 +11,8 @@ pub trait Callable: Debug {
     fn call(&self, interpreter: &mut dyn Runnable, args: Vec<Literal>) -> ScannerResult<Literal>;
 
     fn box_clone(&self) -> Box<dyn Callable>;
+
+    fn bind(&self, instance: Instance) -> Box<dyn Callable>;
 }
 
 impl Clone for Box<dyn Callable> {

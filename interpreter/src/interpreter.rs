@@ -91,6 +91,9 @@ impl Interpreter {
             Expr::Call(ref callee, ref _paren, ref args) => self.call_expression(callee, args),
             Expr::Get(ref obj, ref name) => self.get_expr(obj, name),
             Expr::Set(ref obj, ref name, ref new_value) => self.set_expr(obj, name, new_value),
+            Expr::This(ref name) => {
+                self.lookup_variable(expr, name.lexeme.as_ref().unwrap().as_str())
+            }
         }
     }
 

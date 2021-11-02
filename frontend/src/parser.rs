@@ -378,6 +378,9 @@ impl Parser {
                 return Ok(Expr::Literal(Literal::String(s.to_string())));
             }
         }
+        if self.match_token(vec![This]) {
+            return Ok(Expr::This(self.previous().clone()));
+        }
         if self.match_token(vec![Identifier]) {
             return Ok(Expr::Variable(self.previous().clone()));
         }

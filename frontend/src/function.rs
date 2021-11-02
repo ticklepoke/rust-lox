@@ -1,5 +1,5 @@
-use crate::runnable::EarlyReturn;
 use crate::scanner::ScannerResult;
+use crate::{instance::Instance, runnable::EarlyReturn};
 use std::cell::RefCell;
 use std::rc::Rc;
 use utils::errors::ScannerError;
@@ -46,6 +46,16 @@ impl Callable for Function {
 
     fn box_clone(&self) -> Box<dyn Callable> {
         Box::new(self.clone())
+    }
+
+    fn bind(&self, instance: Instance) -> Box<dyn Callable> {
+        let mut env = Environment::new(Some(Rc::clone(&self.closure)));
+        env.define("this".to_string(), Literal::Instance(instance));
+        Box::new(Function::new(
+            self.params.clone(),
+            self.body.clone(),
+            Rc::new(RefCell::new(env)),
+        ))
     }
 }
 

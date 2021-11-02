@@ -65,6 +65,11 @@ impl Resolver {
                 self.resolve_stmt(body)?;
                 Ok(())
             }
+            Stmt::Class(ref name, _fns) => {
+                self.declare(name)?;
+                self.define(name);
+                Ok(())
+            }
         }
     }
 

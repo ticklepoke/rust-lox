@@ -1,4 +1,5 @@
 use crate::callable::Callable;
+use crate::instance::Instance;
 use crate::runnable::EarlyReturn;
 use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::convert::TryFrom;
@@ -13,6 +14,7 @@ pub enum Literal {
     Boolean(bool),
     Nil,
     Callable(Box<dyn Callable>),
+    Instance(Instance),
 }
 
 impl Hash for Literal {
@@ -35,6 +37,7 @@ impl Display for Literal {
             Self::Boolean(b) => write!(f, "{}", b),
             Self::Nil => write!(f, "Nil"),
             Self::Callable(_c) => write!(f, "Callable"),
+            Self::Instance(i) => write!(f, "{}", i),
         }
     }
 }
@@ -47,6 +50,10 @@ impl PartialEq for Literal {
             (&Literal::Number(ref s), &Literal::Number(ref o)) => (s == o),
             (&Literal::Boolean(ref s), &Literal::Boolean(ref o)) => (s == o),
             (&Literal::Nil, &Literal::Nil) => true,
+            (&Literal::Instance(ref i), &Literal::Instance(ref j)) => {
+                // check for referential equality
+                i as *const _ == j as *const _
+            }
             _ => false,
         }
     }
@@ -60,6 +67,7 @@ impl PartialOrd for Literal {
             (&Literal::Number(ref s), &Literal::Number(ref o)) => s.partial_cmp(o),
             (&Literal::Boolean(ref s), &Literal::Boolean(ref o)) => s.partial_cmp(o),
             (&Literal::Nil, &Literal::Nil) => Some(Ordering::Equal),
+            (&Literal::Instance(ref _i), &Literal::Instance(ref _j)) => None,
             _ => None,
         }
     }

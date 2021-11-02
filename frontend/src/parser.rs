@@ -28,7 +28,9 @@ impl Parser {
     // AST NODE Fns
     fn declaration(&mut self) -> ParserResult<Stmt> {
         let res;
-        if self.match_token(vec![TokenType::Fun]) {
+        if self.match_token(vec![TokenType::Class]) {
+            res = self.class_declaration();
+        } else if self.match_token(vec![TokenType::Fun]) {
             res = self.function("function");
         } else if self.match_token(vec![TokenType::Var]) {
             res = self.var_declaration();
@@ -40,6 +42,20 @@ impl Parser {
             self.synchronize();
         }
         res
+    }
+
+    fn class_declaration(&mut self) -> ParserResult<Stmt> {
+        let name = self.consume(TokenType::Identifier, "Expected class name")?;
+        self.consume(TokenType::LeftBrace, "Expected '{' before class body")?;
+
+        let mut methods = Vec::new();
+
+        while !self.check(TokenType::RightBrace) && !self.is_end() {
+            methods.push(self.function("method")?);
+        }
+        self.consume(TokenType::RightBrace, "Expected '}' after class body")?;
+
+        Ok(Stmt::Class(name, methods))
     }
 
     fn var_declaration(&mut self) -> ParserResult<Stmt> {

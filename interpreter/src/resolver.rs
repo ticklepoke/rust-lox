@@ -98,6 +98,11 @@ impl Resolver {
             }
             Expr::Unary(_op, right) => self.resolve_expr(right),
             Expr::Get(object, _name) => self.resolve_expr(object),
+            Expr::Set(object, _name, new_value) => {
+                self.resolve_expr(object)?;
+                self.resolve_expr(new_value)?;
+                Ok(())
+            }
         }
     }
 

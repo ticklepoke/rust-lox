@@ -9,3 +9,7 @@ print Car;
 var toyota = Car();
 
 print toyota;
+
+toyota.name = "blah";
+
+print toyota.name;

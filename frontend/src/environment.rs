@@ -53,6 +53,7 @@ impl Environment {
     }
 
     pub fn assign(&mut self, name: String, value: Literal) -> InterpreterResult<()> {
+        #[allow(clippy::map_entry)]
         if self.values.contains_key(&name) {
             self.values.insert(name, value);
             return Ok(());

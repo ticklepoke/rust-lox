@@ -89,6 +89,7 @@ impl Interpreter {
                 self.logical_expression(left, operator, right)
             }
             Expr::Call(ref callee, ref _paren, ref args) => self.call_expression(callee, args),
+            Expr::Get(ref obj, ref name) => self.get_expr(obj, name),
         }
     }
 
@@ -108,6 +109,15 @@ impl Interpreter {
                 .map_err(EarlyReturn::Error)?;
         }
         Ok(())
+    }
+
+    fn get_expr(&mut self, obj: &Expr, name: &Token) -> InterpreterResult<Literal> {
+        let obj = self.evaluate(obj)?;
+        if let Literal::Instance(instance) = obj {
+            Ok(instance.get(name.clone()))
+        } else {
+            Err(EarlyReturn::Error(InterpreterError::InvalidAstType))
+        }
     }
 
     fn call_expression(&mut self, callee: &Expr, args: &[Expr]) -> InterpreterResult<Literal> {

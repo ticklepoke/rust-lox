@@ -326,6 +326,10 @@ impl Parser {
         loop {
             if self.match_token(vec![TokenType::LeftParen]) {
                 expr = self.finish_call(expr)?;
+            } else if self.match_token(vec![TokenType::Dot]) {
+                let name =
+                    self.consume(TokenType::Identifier, "Expected property name after '.'")?;
+                expr = Expr::Get(Box::new(expr), name);
             } else {
                 break;
             }

@@ -1,6 +1,7 @@
 use crate::callable::Callable;
 use crate::instance::Instance;
 use crate::literal::Literal;
+use std::fmt::Display;
 
 #[derive(Debug, Clone)]
 pub struct Class {
@@ -11,9 +12,11 @@ impl Class {
     pub fn new(name: String) -> Self {
         Class { name }
     }
+}
 
-    pub fn to_string(&self) -> String {
-        self.name.clone()
+impl Display for Class {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.name)
     }
 }
 

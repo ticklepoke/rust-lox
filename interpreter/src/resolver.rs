@@ -97,6 +97,7 @@ impl Resolver {
                 Ok(())
             }
             Expr::Unary(_op, right) => self.resolve_expr(right),
+            Expr::Get(object, _name) => self.resolve_expr(object),
         }
     }
 

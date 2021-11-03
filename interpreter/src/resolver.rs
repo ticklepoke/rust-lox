@@ -9,6 +9,7 @@ pub enum ResolverError {
     UndefinedVariable,
     ExistingVariable,
     InvalidReturnStatement,
+    InvalidThisStatement,
 }
 
 type ResolverResult<T> = Result<T, ResolverError>;
@@ -20,10 +21,17 @@ enum FunctionType {
     Method,
 }
 
+#[derive(Clone)]
+enum ClassType {
+    None,
+    Class,
+}
+
 pub struct Resolver {
     interpreter: Rc<RefCell<Interpreter>>,
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
+    current_class: ClassType,
 }
 
 #[allow(dead_code)]
@@ -33,6 +41,7 @@ impl Resolver {
             interpreter,
             scopes: Vec::new(),
             current_function: FunctionType::None,
+            current_class: ClassType::None,
         }
     }
 
@@ -66,23 +75,7 @@ impl Resolver {
                 self.resolve_stmt(body)?;
                 Ok(())
             }
-            Stmt::Class(ref name, methods) => {
-                self.declare(name)?;
-                self.define(name);
-                self.begin_scope();
-                self.scopes
-                    .last_mut()
-                    .unwrap()
-                    .insert("this".to_string(), true);
-                for m in methods {
-                    if let Stmt::Function(_name, params, body) = m {
-                        let decl = FunctionType::Method;
-                        self.resolve_function(params, body, decl)?;
-                    }
-                }
-                self.end_scope();
-                Ok(())
-            }
+            Stmt::Class(ref name, methods) => self.class_stmt(name, methods),
         }
     }
 
@@ -116,7 +109,12 @@ impl Resolver {
                 self.resolve_expr(new_value)?;
                 Ok(())
             }
-            Expr::This(name) => self.resolve_local(expr, name),
+            Expr::This(name) => {
+                if let ClassType::None = self.current_class {
+                    return Err(ResolverError::InvalidThisStatement);
+                }
+                self.resolve_local(expr, name)
+            }
         }
     }
 
@@ -132,6 +130,27 @@ impl Resolver {
                 }
             }
         }
+        Ok(())
+    }
+
+    fn class_stmt(&mut self, name: &Token, methods: &Vec<Stmt>) -> ResolverResult<()> {
+        let enclosing_class = self.current_class.clone();
+        self.current_class = ClassType::Class;
+        self.declare(name)?;
+        self.define(name);
+        self.begin_scope();
+        self.scopes
+            .last_mut()
+            .unwrap()
+            .insert("this".to_string(), true);
+        for m in methods {
+            if let Stmt::Function(_name, params, body) = m {
+                let decl = FunctionType::Method;
+                self.resolve_function(params, body, decl)?;
+            }
+        }
+        self.end_scope();
+        self.current_class = enclosing_class;
         Ok(())
     }
 

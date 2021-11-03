@@ -29,6 +29,10 @@ impl Display for Class {
 
 impl Callable for Class {
     fn arity(&self) -> usize {
+        let init = self.get_method("init");
+        if let Some(Literal::Callable(init)) = init {
+            return init.arity();
+        }
         0
     }
 
@@ -38,11 +42,15 @@ impl Callable for Class {
 
     fn call(
         &self,
-        _interpreter: &mut dyn crate::runnable::Runnable,
-        _args: Vec<crate::literal::Literal>,
+        interpreter: &mut dyn crate::runnable::Runnable,
+        args: Vec<crate::literal::Literal>,
     ) -> crate::scanner::ScannerResult<crate::literal::Literal> {
         // HACK: cloning class to create instance for now to avoid messy lifetimes
         let instance = Instance::new(self.clone());
+        let init = self.get_method("init");
+        if let Some(Literal::Callable(init)) = init {
+            init.bind(instance.clone()).call(interpreter, args)?;
+        }
         Ok(Literal::Instance(instance))
     }
 

@@ -13,6 +13,7 @@ pub struct Function {
     params: Vec<Token>,
     body: Vec<Stmt>,
     closure: Rc<RefCell<Environment>>,
+    is_init: bool,
 }
 
 impl Callable for Function {
@@ -36,10 +37,26 @@ impl Callable for Function {
         let res = interpreter.block(self.body.clone(), curr_env.into_cell());
 
         match res {
-            Ok(_) => Ok(Literal::Nil),
+            Ok(_) => {
+                if self.is_init {
+                    let this_method = self.closure.borrow_mut().get_at(0, "init");
+                    if let Some(this_method) = this_method {
+                        return Ok(this_method);
+                    }
+                }
+                Ok(Literal::Nil)
+            }
             Err(e) => match e {
                 EarlyReturn::Error(_) => Err(ScannerError::UnknownError),
-                EarlyReturn::Return(val) => Ok(val),
+                EarlyReturn::Return(val) => {
+                    if self.is_init {
+                        let this = self.closure.borrow_mut().get_at(0, "this");
+                        if let Some(this) = this {
+                            return Ok(this);
+                        }
+                    }
+                    Ok(val)
+                }
             },
         }
     }
@@ -55,16 +72,23 @@ impl Callable for Function {
             self.params.clone(),
             self.body.clone(),
             Rc::new(RefCell::new(env)),
+            self.is_init,
         ))
     }
 }
 
 impl Function {
-    pub fn new(params: Vec<Token>, body: Vec<Stmt>, closure: Rc<RefCell<Environment>>) -> Self {
+    pub fn new(
+        params: Vec<Token>,
+        body: Vec<Stmt>,
+        closure: Rc<RefCell<Environment>>,
+        is_init: bool,
+    ) -> Self {
         Function {
             params,
             body,
             closure,
+            is_init,
         }
     }
 }

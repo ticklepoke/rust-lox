@@ -111,8 +111,13 @@ impl Interpreter {
 
             for m in methods {
                 if let Stmt::Function(name, params, body) = m {
-                    let func = Function::new(params, body, Rc::clone(&self.environment));
                     if let Some(name) = name.lexeme {
+                        let func = Function::new(
+                            params,
+                            body,
+                            Rc::clone(&self.environment),
+                            name.as_str() == "init",
+                        );
                         name_to_methods.insert(name, Literal::Callable(Box::new(func)));
                     }
                 }
@@ -171,7 +176,7 @@ impl Interpreter {
     }
 
     fn function(&self, name: Token, params: Vec<Token>, body: Vec<Stmt>) -> InterpreterResult<()> {
-        let function = Function::new(params, body, Rc::clone(&self.environment));
+        let function = Function::new(params, body, Rc::clone(&self.environment), false);
         if let Some(name) = name.lexeme {
             self.environment
                 .borrow_mut()

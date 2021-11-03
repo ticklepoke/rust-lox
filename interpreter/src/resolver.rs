@@ -18,6 +18,7 @@ type ResolverResult<T> = Result<T, ResolverError>;
 enum FunctionType {
     None,
     Function,
+    Init,
     Method,
 }
 
@@ -34,7 +35,6 @@ pub struct Resolver {
     current_class: ClassType,
 }
 
-#[allow(dead_code)]
 impl Resolver {
     pub fn new(interpreter: Rc<RefCell<Interpreter>>) -> Self {
         Resolver {
@@ -66,9 +66,13 @@ impl Resolver {
                 if let FunctionType::None = self.current_function {
                     return Err(ResolverError::InvalidReturnStatement);
                 }
-                expr.as_ref()
-                    .map(|e| self.resolve_expr(e))
-                    .unwrap_or(Ok(()))
+                if let Some(e) = expr {
+                    if let FunctionType::Init = self.current_function {
+                        return Err(ResolverError::InvalidReturnStatement);
+                    }
+                    self.resolve_expr(e)?;
+                }
+                Ok(())
             }
             Stmt::While(ref condition, body) => {
                 self.resolve_expr(condition)?;
@@ -133,7 +137,7 @@ impl Resolver {
         Ok(())
     }
 
-    fn class_stmt(&mut self, name: &Token, methods: &Vec<Stmt>) -> ResolverResult<()> {
+    fn class_stmt(&mut self, name: &Token, methods: &[Stmt]) -> ResolverResult<()> {
         let enclosing_class = self.current_class.clone();
         self.current_class = ClassType::Class;
         self.declare(name)?;
@@ -144,8 +148,13 @@ impl Resolver {
             .unwrap()
             .insert("this".to_string(), true);
         for m in methods {
-            if let Stmt::Function(_name, params, body) = m {
-                let decl = FunctionType::Method;
+            if let Stmt::Function(name, params, body) = m {
+                let mut decl = FunctionType::Method;
+                if let Some(name) = &name.lexeme {
+                    if name == "init" {
+                        decl = FunctionType::Init;
+                    }
+                }
                 self.resolve_function(params, body, decl)?;
             }
         }

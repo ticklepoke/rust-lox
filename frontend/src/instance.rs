@@ -24,10 +24,8 @@ impl Instance {
                 // TODO HACK check if cloning leads to issues
                 return field.clone();
             }
-            if let Some(method) = self.class.get_method(name.as_str()) {
-                if let Literal::Callable(method) = method {
-                    return Literal::Callable(method.bind(self.clone()));
-                }
+            if let Some(Literal::Callable(method)) = self.class.get_method(name.as_str()) {
+                return Literal::Callable(method.bind(self.clone()));
             }
         };
         Literal::Nil

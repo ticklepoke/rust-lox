@@ -385,6 +385,12 @@ impl Parser {
                 return Ok(Expr::Literal(Literal::String(s.to_string())));
             }
         }
+        if self.match_token(vec![Super]) {
+            let keyword = self.previous().clone();
+            self.consume(TokenType::Dot, "Expected '.' after 'super'")?;
+            let method = self.consume(TokenType::Identifier, "Expect superclass method name")?;
+            return Ok(Expr::Super(keyword, method));
+        }
         if self.match_token(vec![This]) {
             return Ok(Expr::This(self.previous().clone()));
         }

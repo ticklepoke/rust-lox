@@ -97,6 +97,7 @@ impl Interpreter {
             Expr::This(ref name) => {
                 self.lookup_variable(expr, name.lexeme.as_ref().unwrap().as_str())
             }
+            Expr::Super(..) => self.super_expr(expr),
         }
     }
 
@@ -112,8 +113,8 @@ impl Interpreter {
     ) -> InterpreterResult<()> {
         if let Some(lex) = name.lexeme {
             let mut super_class_eval = None;
-            if let Some(super_class) = super_class {
-                let super_class_eval_unmatched = self.evaluate(&super_class).ok();
+            if let Some(super_class) = super_class.as_ref() {
+                let super_class_eval_unmatched = self.evaluate(super_class).ok();
                 match super_class_eval_unmatched {
                     Some(Literal::Class(c)) => super_class_eval = Some(Box::new(c)),
                     None => {}
@@ -124,6 +125,17 @@ impl Interpreter {
                 .borrow_mut()
                 .define(lex.clone(), Literal::Nil);
 
+            let mut prev_env = None;
+            if let Some(s) = super_class_eval.as_ref() {
+                let enclosing = Rc::clone(&self.environment);
+                prev_env = Some(mem::replace(
+                    &mut self.environment,
+                    Environment::new(Some(enclosing)).into_cell(),
+                ));
+                self.environment
+                    .borrow_mut()
+                    .define("super".to_string(), Literal::Class(*s.clone())); // HACK cloning is ok since classes dont hold state
+            }
             let mut name_to_methods = HashMap::new();
 
             for m in methods {
@@ -141,12 +153,42 @@ impl Interpreter {
             }
 
             let class = Class::new(lex.clone(), super_class_eval, name_to_methods);
+            if super_class.is_some() {
+                self.environment = prev_env.unwrap();
+            }
             self.environment
                 .borrow_mut()
                 .assign(lex, Literal::Class(class))
                 .map_err(EarlyReturn::Error)?;
         }
         Ok(())
+    }
+
+    fn super_expr(&self, expr: &Expr) -> InterpreterResult<Literal> {
+        let distance = *self.locals.get(expr).unwrap();
+        let super_class = self
+            .environment
+            .borrow_mut()
+            .get_at(distance, "super")
+            .unwrap();
+        let instance = self
+            .environment
+            .borrow_mut()
+            .get_at(distance - 1, "this")
+            .unwrap();
+        if let Literal::Class(s) = super_class {
+            if let Expr::Super(_keyword, method) = expr {
+                let method_name = method.lexeme.as_ref().unwrap();
+                let method = s.get_method(method_name).unwrap();
+                if let Literal::Callable(m) = method {
+                    if let Literal::Instance(i) = instance {
+                        m.bind(i);
+                        return Ok(Literal::Callable(m));
+                    }
+                }
+            }
+        }
+        unreachable!();
     }
 
     fn get_expr(&mut self, obj: &Expr, name: &Token) -> InterpreterResult<Literal> {
@@ -197,7 +239,7 @@ impl Interpreter {
                 c.call(self, arg_literals)
                     .map_err(|_| EarlyReturn::Error(InterpreterError::InvalidAstType))
             }
-            _ => return Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
+            _ => Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
         }
     }
 

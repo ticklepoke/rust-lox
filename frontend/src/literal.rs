@@ -1,4 +1,5 @@
 use crate::callable::Callable;
+use crate::class::Class;
 use crate::instance::Instance;
 use crate::runnable::EarlyReturn;
 use std::cmp::{Ordering, PartialEq, PartialOrd};
@@ -14,6 +15,7 @@ pub enum Literal {
     Boolean(bool),
     Nil,
     Callable(Box<dyn Callable>),
+    Class(Class),
     Instance(Instance),
 }
 
@@ -37,6 +39,7 @@ impl Display for Literal {
             Self::Boolean(b) => write!(f, "{}", b),
             Self::Nil => write!(f, "Nil"),
             Self::Callable(_c) => write!(f, "Callable"),
+            Self::Class(c) => write!(f, "class {}", c),
             Self::Instance(i) => write!(f, "{}", i),
         }
     }
@@ -54,6 +57,10 @@ impl PartialEq for Literal {
                 // check for referential equality
                 std::ptr::eq(i, j)
             }
+            (&Literal::Class(ref i), &Literal::Class(ref j)) => {
+                // check for referential equality
+                std::ptr::eq(i, j)
+            }
             _ => false,
         }
     }
@@ -68,6 +75,7 @@ impl PartialOrd for Literal {
             (&Literal::Boolean(ref s), &Literal::Boolean(ref o)) => s.partial_cmp(o),
             (&Literal::Nil, &Literal::Nil) => Some(Ordering::Equal),
             (&Literal::Instance(ref _i), &Literal::Instance(ref _j)) => None,
+            (&Literal::Class(ref _i), &Literal::Class(ref _j)) => None,
             _ => None,
         }
     }

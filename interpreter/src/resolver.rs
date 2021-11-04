@@ -10,6 +10,7 @@ pub enum ResolverError {
     ExistingVariable,
     InvalidReturnStatement,
     InvalidThisStatement,
+    InvalidSuperStatement,
 }
 
 type ResolverResult<T> = Result<T, ResolverError>;
@@ -26,6 +27,7 @@ enum FunctionType {
 enum ClassType {
     None,
     Class,
+    SubClass,
 }
 
 pub struct Resolver {
@@ -115,6 +117,7 @@ impl Resolver {
                 self.resolve_expr(new_value)?;
                 Ok(())
             }
+            Expr::Super(keyword, ..) => self.super_expr(keyword, expr),
             Expr::This(name) => {
                 if let ClassType::None = self.current_class {
                     return Err(ResolverError::InvalidThisStatement);
@@ -160,7 +163,14 @@ impl Resolver {
                     }
                 }
             }
+            self.current_class = ClassType::SubClass;
             self.resolve_expr(super_class)?;
+
+            self.begin_scope();
+            self.scopes
+                .last_mut()
+                .unwrap()
+                .insert("super".to_string(), true);
         }
 
         self.begin_scope();
@@ -180,7 +190,23 @@ impl Resolver {
             }
         }
         self.end_scope();
+        if super_class.is_some() {
+            self.end_scope();
+        }
+
         self.current_class = enclosing_class;
+        Ok(())
+    }
+
+    fn super_expr(&self, keyword: &Token, expr: &Expr) -> ResolverResult<()> {
+        match self.current_class {
+            ClassType::Class | ClassType::None => {
+                return Err(ResolverError::InvalidSuperStatement);
+            }
+            ClassType::SubClass => {}
+        };
+
+        self.resolve_local(expr, keyword)?;
         Ok(())
     }
 

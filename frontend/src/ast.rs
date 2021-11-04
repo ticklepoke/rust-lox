@@ -63,6 +63,7 @@ pub enum Expr {
     Literal(Literal),
     Logical(Box<Expr>, Token, Box<Expr>),
     Set(Box<Expr>, Token, Box<Expr>),
+    Super(Token, Token),
     This(Token),
     Unary(Token, Box<Expr>),
     Variable(Token),
@@ -105,6 +106,9 @@ impl fmt::Display for Expr {
             }
             Expr::Set(ref object, ref name, ref new_value) => {
                 write!(f, "({}.{} = {}", object, name, new_value)
+            }
+            Expr::Super(ref keyword, ref method) => {
+                write!(f, "{} {}", keyword, method)
             }
             Expr::This(ref name) => {
                 write!(f, "{}", name)

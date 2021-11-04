@@ -9,7 +9,7 @@ fn test_scanner() {
         _ => return,
     };
     let mut expected_tokens = Vec::new();
-    expected_tokens.push(Token::new(TokenType::And, None, None, 1));
+    expected_tokens.push(Token::new(TokenType::And, Some("and".to_string()), None, 1));
     expected_tokens.push(Token::new(TokenType::EOF, None, None, 1));
     assert_eq!(tokens, expected_tokens);
 }

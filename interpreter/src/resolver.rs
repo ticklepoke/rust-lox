@@ -79,7 +79,9 @@ impl Resolver {
                 self.resolve_stmt(body)?;
                 Ok(())
             }
-            Stmt::Class(ref name, methods) => self.class_stmt(name, methods),
+            Stmt::Class(ref name, super_class, methods) => {
+                self.class_stmt(name, super_class, methods)
+            }
         }
     }
 
@@ -137,11 +139,30 @@ impl Resolver {
         Ok(())
     }
 
-    fn class_stmt(&mut self, name: &Token, methods: &[Stmt]) -> ResolverResult<()> {
+    fn class_stmt(
+        &mut self,
+        name: &Token,
+        super_class: &Option<Expr>,
+        methods: &[Stmt],
+    ) -> ResolverResult<()> {
         let enclosing_class = self.current_class.clone();
         self.current_class = ClassType::Class;
         self.declare(name)?;
         self.define(name);
+
+        if let Some(super_class) = super_class {
+            if let Some(base_name) = name.lexeme.as_ref() {
+                if let Expr::Variable(super_name) = super_class {
+                    if let Some(super_name) = super_name.lexeme.as_ref() {
+                        if super_name.eq(base_name.as_str()) {
+                            return Err(ResolverError::ExistingVariable);
+                        }
+                    }
+                }
+            }
+            self.resolve_expr(super_class)?;
+        }
+
         self.begin_scope();
         self.scopes
             .last_mut()

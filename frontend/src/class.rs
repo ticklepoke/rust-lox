@@ -8,16 +8,32 @@ use std::fmt::Display;
 pub struct Class {
     name: String,
     methods: HashMap<String, Literal>,
+    super_class: Option<Box<Class>>,
 }
 
 impl Class {
-    pub fn new(name: String, methods: HashMap<String, Literal>) -> Self {
-        Class { name, methods }
+    pub fn new(
+        name: String,
+        super_class: Option<Box<Class>>,
+        methods: HashMap<String, Literal>,
+    ) -> Self {
+        Class {
+            name,
+            methods,
+            super_class,
+        }
     }
 
     pub fn get_method(&self, name: &str) -> Option<Literal> {
         // TODO HACK to_owned might clone
-        self.methods.get(name).map(|m| m.to_owned())
+        let own_method = self.methods.get(name).map(|m| m.to_owned());
+        if own_method.is_some() {
+            return own_method;
+        }
+        if let Some(super_class) = self.super_class.as_ref() {
+            return super_class.get_method(name);
+        }
+        None
     }
 }
 
@@ -55,7 +71,6 @@ impl Callable for Class {
     }
 
     fn bind(&self, _instance: Instance) -> Box<dyn Callable> {
-        // HACK noop
-        self.box_clone()
+        panic!("Unable to bind on class constructor");
     }
 }

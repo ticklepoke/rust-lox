@@ -1,4 +1,5 @@
 use frontend::ast::{Expr, Stmt};
+use frontend::callable::Callable;
 use frontend::class::Class;
 use frontend::environment::Environment;
 use frontend::function::Function;
@@ -69,7 +70,9 @@ impl Interpreter {
                 Stmt::Return(_return_keyword, return_value) => {
                     self.return_statement(return_value)?
                 }
-                Stmt::Class(name, methods) => self.class_stmt(name, methods)?,
+                Stmt::Class(name, super_class, methods) => {
+                    self.class_stmt(name, super_class, methods)?
+                }
             }
         }
         Ok(())
@@ -101,8 +104,22 @@ impl Interpreter {
         self.locals.insert(expr, depth);
     }
 
-    fn class_stmt(&mut self, name: Token, methods: Vec<Stmt>) -> InterpreterResult<()> {
+    fn class_stmt(
+        &mut self,
+        name: Token,
+        super_class: Option<Expr>,
+        methods: Vec<Stmt>,
+    ) -> InterpreterResult<()> {
         if let Some(lex) = name.lexeme {
+            let mut super_class_eval = None;
+            if let Some(super_class) = super_class {
+                let super_class_eval_unmatched = self.evaluate(&super_class).ok();
+                match super_class_eval_unmatched {
+                    Some(Literal::Class(c)) => super_class_eval = Some(Box::new(c)),
+                    None => {}
+                    _ => return Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
+                }
+            }
             self.environment
                 .borrow_mut()
                 .define(lex.clone(), Literal::Nil);
@@ -123,7 +140,7 @@ impl Interpreter {
                 }
             }
 
-            let class = Class::new(lex.clone(), name_to_methods);
+            let class = Class::new(lex.clone(), super_class_eval, name_to_methods);
             self.environment
                 .borrow_mut()
                 .assign(lex, Literal::Class(class))
@@ -158,21 +175,30 @@ impl Interpreter {
     }
 
     fn call_expression(&mut self, callee: &Expr, args: &[Expr]) -> InterpreterResult<Literal> {
-        let function = match self.evaluate(callee)? {
-            Literal::Callable(c) => c,
-            _ => return Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
-        };
+        let callee_eval = self.evaluate(callee)?;
         let mut arg_literals = Vec::new();
         for arg in args {
             arg_literals.push(self.evaluate(arg)?);
         }
 
-        if arg_literals.len() != function.arity() {
-            return Err(EarlyReturn::Error(InterpreterError::MismatchFunctionArity));
+        match callee_eval {
+            Literal::Callable(function) => {
+                if arg_literals.len() != function.arity() {
+                    return Err(EarlyReturn::Error(InterpreterError::MismatchFunctionArity));
+                }
+                function
+                    .call(self, arg_literals)
+                    .map_err(|_| EarlyReturn::Error(InterpreterError::InvalidAstType))
+            }
+            Literal::Class(c) => {
+                if arg_literals.len() != c.arity() {
+                    return Err(EarlyReturn::Error(InterpreterError::MismatchFunctionArity));
+                }
+                c.call(self, arg_literals)
+                    .map_err(|_| EarlyReturn::Error(InterpreterError::InvalidAstType))
+            }
+            _ => return Err(EarlyReturn::Error(InterpreterError::InvalidAstType)),
         }
-        function
-            .call(self, arg_literals)
-            .map_err(|_| EarlyReturn::Error(InterpreterError::InvalidAstType))
     }
 
     fn function(&self, name: Token, params: Vec<Token>, body: Vec<Stmt>) -> InterpreterResult<()> {

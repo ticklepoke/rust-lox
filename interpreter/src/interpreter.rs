@@ -126,7 +126,7 @@ impl Interpreter {
             let class = Class::new(lex.clone(), name_to_methods);
             self.environment
                 .borrow_mut()
-                .assign(lex, Literal::Callable(Box::new(class)))
+                .assign(lex, Literal::Class(class))
                 .map_err(EarlyReturn::Error)?;
         }
         Ok(())

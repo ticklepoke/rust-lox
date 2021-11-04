@@ -1,0 +1,9 @@
+class Fruit {
+    eat() {
+        print "yum";
+    }
+}
+
+class Apple < Fruit {}
+
+Apple().eat();

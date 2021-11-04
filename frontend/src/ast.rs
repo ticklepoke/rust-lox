@@ -12,7 +12,7 @@ pub enum Stmt {
     Return(Token, Option<Expr>),
     Var(Token, Option<Expr>),
     While(Expr, Box<Stmt>),
-    Class(Token, Vec<Stmt>),
+    Class(Token, Option<Expr>, Vec<Stmt>),
 }
 
 impl fmt::Display for Stmt {

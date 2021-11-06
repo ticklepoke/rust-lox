@@ -9,3 +9,4 @@ authors = ["ticklepoke <lee.nigel@hotmail.com>"]
 [dependencies]
 frontend = { path = "../frontend" }
 interpreter = { path = "../interpreter" }
+vm = { path = "../vm" }

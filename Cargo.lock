@@ -23,8 +23,13 @@ version = "0.1.0"
 dependencies = [
  "frontend",
  "interpreter",
+ "vm",
 ]
 
 [[package]]
 name = "utils"
+version = "0.1.0"
+
+[[package]]
+name = "vm"
 version = "0.1.0"

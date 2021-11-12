@@ -1,3 +1,5 @@
+use crate::scanner::Scanner;
+use crate::token::TokenType;
 use crate::{chunk::Chunk, disassembler, opcode::OpCode, value::Value};
 
 #[derive(Debug)]
@@ -29,8 +31,16 @@ impl Vm {
         }
     }
 
-    pub fn interpret(&mut self) -> InterpreterResult<()> {
-        self.run()
+    pub fn interpret(&mut self, source: &str) -> InterpreterResult<()> {
+        let mut scanner = Scanner::new(source);
+        loop {
+            let tok = scanner.scan_token();
+            println!("{:?}", tok);
+            if let TokenType::Eof = tok.token_type {
+                break;
+            }
+        }
+        Ok(())
     }
 
     fn run(&mut self) -> InterpreterResult<()> {

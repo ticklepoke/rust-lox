@@ -2,6 +2,7 @@ extern crate frontend;
 extern crate interpreter;
 extern crate vm;
 
+mod clox;
 mod lox;
 
 #[cfg(test)]
@@ -12,7 +13,7 @@ use interpreter::{clock::Clock, interpreter::Interpreter};
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::{env, path};
-use vm::{chunk::Chunk, opcode::OpCode};
+use vm::chunk::Chunk;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -37,19 +38,14 @@ fn main() {
             println!("usage: jlox [filename.lox]")
         }
     } else if args[1] == "clox" {
-        let mut chunk = Chunk::new();
-        chunk.write_chunk(OpCode::ConstantNumber(123.0), 1);
-        chunk.write_chunk(OpCode::ConstantNumber(1.2), 3);
-        chunk.write_chunk(OpCode::ConstantNumber(3.4), 4);
-        chunk.write_chunk(OpCode::Add, 5);
-        chunk.write_chunk(OpCode::ConstantNumber(5.6), 6);
-        chunk.write_chunk(OpCode::Divide, 7);
-        chunk.write_chunk(OpCode::Negate, 2);
-        chunk.write_chunk(OpCode::Return, 8);
+        let chunk = Chunk::new();
         let mut virtual_machine = vm::vm::Vm::new(chunk);
-        match virtual_machine.interpret() {
-            Ok(()) => {}
-            Err(e) => panic!("Error: {:?}", e),
+        if args.len() == 2 {
+            clox::repl(&mut virtual_machine);
+        } else if args.len() == 3 {
+            clox::run_file(args[2].as_str(), &mut virtual_machine);
+        } else {
+            println!("Usage: clox [path]");
         }
     }
 }

@@ -1,3 +1,5 @@
+use crate::literal::Literal;
+
 #[derive(Debug)]
 pub enum TokenType {
     // Single char tokens
@@ -53,14 +55,21 @@ pub enum TokenType {
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: Option<String>,
+    pub literal: Option<Literal>,
     pub line: usize,
 }
 
 impl Token {
-    pub fn new(token_type: TokenType, lexeme: Option<String>, line: usize) -> Self {
+    pub fn new(
+        token_type: TokenType,
+        lexeme: Option<String>,
+        literal: Option<Literal>,
+        line: usize,
+    ) -> Self {
         Token {
             token_type,
             lexeme,
+            literal,
             line,
         }
     }

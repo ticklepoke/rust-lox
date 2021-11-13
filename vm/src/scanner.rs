@@ -1,6 +1,9 @@
-use std::{iter::Peekable, str::Chars};
+use std::{iter::Peekable, str::Chars, str::FromStr};
 
-use crate::token::{Token, TokenType};
+use crate::{
+    literal::Literal,
+    token::{Token, TokenType},
+};
 
 pub struct Scanner<'a> {
     source: Peekable<Chars<'a>>,
@@ -19,17 +22,17 @@ impl<'a> Scanner<'a> {
         self.skip_whitespace();
         if let Some(c) = self.source.next() {
             return match c {
-                '(' => self.make_token(TokenType::LeftParen, Some("(")),
-                ')' => self.make_token(TokenType::RightParen, Some(")")),
-                '{' => self.make_token(TokenType::LeftBrace, Some("{")),
-                '}' => self.make_token(TokenType::RightBrace, Some("}")),
-                ';' => self.make_token(TokenType::Semicolon, Some(";")),
-                ',' => self.make_token(TokenType::Comma, Some(",")),
-                '.' => self.make_token(TokenType::Dot, Some(".")),
-                '-' => self.make_token(TokenType::Minus, Some("-")),
-                '+' => self.make_token(TokenType::Plus, Some("+")),
-                '/' => self.make_token(TokenType::Slash, Some("/")),
-                '*' => self.make_token(TokenType::Star, Some("*")),
+                '(' => self.make_token(TokenType::LeftParen, Some("("), None),
+                ')' => self.make_token(TokenType::RightParen, Some(")"), None),
+                '{' => self.make_token(TokenType::LeftBrace, Some("{"), None),
+                '}' => self.make_token(TokenType::RightBrace, Some("}"), None),
+                ';' => self.make_token(TokenType::Semicolon, Some(";"), None),
+                ',' => self.make_token(TokenType::Comma, Some(","), None),
+                '.' => self.make_token(TokenType::Dot, Some("."), None),
+                '-' => self.make_token(TokenType::Minus, Some("-"), None),
+                '+' => self.make_token(TokenType::Plus, Some("+"), None),
+                '/' => self.make_token(TokenType::Slash, Some("/"), None),
+                '*' => self.make_token(TokenType::Star, Some("*"), None),
 
                 // Peek ahead 1 char
                 '!' => self.match_binary(TokenType::Bang, TokenType::BangEqual, '!'),
@@ -40,7 +43,7 @@ impl<'a> Scanner<'a> {
                 '"' => self.match_string(),
                 '0'..='9' => self.match_digit(c),
                 'a'..='z' | 'A'..='Z' | '_' => self.match_identifier(c),
-                '\n' => self.make_token(TokenType::Eof, None),
+                '\n' => self.make_token(TokenType::Eof, None, None),
                 _ => panic!("Invalid token: {}, line {}", c, self.line),
             };
         } else {
@@ -57,9 +60,9 @@ impl<'a> Scanner<'a> {
         let lexeme = curr_char.to_string();
         if let Some('=') = self.source.peek() {
             self.source.next();
-            self.make_token(equality_type, Some((lexeme + "=").as_str()))
+            self.make_token(equality_type, Some((lexeme + "=").as_str()), None)
         } else {
-            self.make_token(inequality_type, Some(lexeme.as_str()))
+            self.make_token(inequality_type, Some(lexeme.as_str()), None)
         }
     }
 
@@ -69,8 +72,11 @@ impl<'a> Scanner<'a> {
         while let Some(&c) = self.source.peek() {
             if c == '"' {
                 self.source.next();
-                // TODO: check if token should hold literal value
-                return self.make_token(TokenType::String, Some(captured_string.as_str()));
+                return self.make_token(
+                    TokenType::String,
+                    Some(captured_string.as_str()),
+                    Some(Literal::String(captured_string.to_owned())),
+                );
             } else if c == '\n' {
                 self.line += 1;
             }
@@ -98,8 +104,11 @@ impl<'a> Scanner<'a> {
             }
         }
 
-        // TODO: numbers need literal
-        self.make_token(TokenType::Number, Some(captured_digit.as_str()))
+        self.make_token(
+            TokenType::Number,
+            Some(captured_digit.as_str()),
+            Some(Literal::Number(f64::from_str(&captured_digit).unwrap())),
+        )
     }
 
     fn match_identifier(&mut self, captured_name: char) -> Token {
@@ -127,7 +136,7 @@ impl<'a> Scanner<'a> {
                         _ => {}
                     };
                 }
-                self.make_token(TokenType::Identifier, Some(identifier.as_str()))
+                self.make_token(TokenType::Identifier, Some(identifier.as_str()), None)
             }
             'i' => self.check_keyword("if", TokenType::If, identifier),
             'n' => self.check_keyword("nil", TokenType::Nil, identifier),
@@ -143,11 +152,11 @@ impl<'a> Scanner<'a> {
                         _ => {}
                     }
                 }
-                self.make_token(TokenType::Identifier, Some(identifier.as_str()))
+                self.make_token(TokenType::Identifier, Some(identifier.as_str()), None)
             }
             'v' => self.check_keyword("var", TokenType::Var, identifier),
             'w' => self.check_keyword("while", TokenType::While, identifier),
-            _ => self.make_token(TokenType::Identifier, Some(identifier.as_str())),
+            _ => self.make_token(TokenType::Identifier, Some(identifier.as_str()), None),
         }
     }
 
@@ -158,9 +167,13 @@ impl<'a> Scanner<'a> {
         captured_identifier: String,
     ) -> Token {
         if captured_identifier.eq(rest) {
-            return self.make_token(token_type, Some(captured_identifier.as_str()));
+            return self.make_token(token_type, Some(captured_identifier.as_str()), None);
         }
-        self.make_token(TokenType::Identifier, Some(captured_identifier.as_str()))
+        self.make_token(
+            TokenType::Identifier,
+            Some(captured_identifier.as_str()),
+            None,
+        )
     }
 
     fn is_digit(&mut self) -> bool {
@@ -197,7 +210,17 @@ impl<'a> Scanner<'a> {
         }
     }
 
-    fn make_token(&self, token_type: TokenType, lexeme: Option<&str>) -> Token {
-        Token::new(token_type, lexeme.map(|c| c.to_string()), self.line)
+    fn make_token(
+        &self,
+        token_type: TokenType,
+        lexeme: Option<&str>,
+        literal: Option<Literal>,
+    ) -> Token {
+        Token::new(
+            token_type,
+            lexeme.map(|c| c.to_string()),
+            literal,
+            self.line,
+        )
     }
 }

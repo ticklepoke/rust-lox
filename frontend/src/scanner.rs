@@ -75,7 +75,6 @@ impl<'a> Scanner<'a> {
                 return;
             } else if c == '\n' {
                 self.line += 1;
-                break;
             }
 
             self.source.next();
